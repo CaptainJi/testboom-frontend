@@ -1,0 +1,122 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    :root {
+        --background: 260 30% 8%;
+        --foreground: 210 40% 98%;
+
+        --card: 260 30% 12%;
+        --card-foreground: 210 40% 98%;
+
+        --popover: 260 30% 12%;
+        --popover-foreground: 210 40% 98%;
+
+        --primary: 199 89% 48%;
+        --primary-foreground: 0 0% 100%;
+
+        --secondary: 260 30% 17%;
+        --secondary-foreground: 210 40% 98%;
+
+        --muted: 260 30% 17%;
+        --muted-foreground: 215 20.2% 65.1%;
+
+        --accent: 199 89% 48%;
+        --accent-foreground: 0 0% 100%;
+
+        --destructive: 0 84% 60%;
+        --destructive-foreground: 0 0% 100%;
+
+        --success: 142 72% 29%;
+        --success-foreground: 0 0% 100%;
+
+        --border: 260 30% 17%;
+        --input: 260 30% 17%;
+        --ring: 199 89% 48%;
+
+        --radius: 0.75rem;
+    }
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+
+    body {
+        @apply bg-[#13111C] text-foreground;
+    }
+
+    /* 自定义渐变背景 */
+    .gradient-bg {
+        background: linear-gradient(135deg, #0284C7 0%, #2563EB 100%);
+    }
+
+    /* 卡片悬浮效果 */
+    .hover-card {
+        transition: all 0.3s ease;
+        background: rgba(23, 21, 34, 0.7);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(99, 102, 241, 0.1);
+    }
+
+    .hover-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px -10px rgba(37, 99, 235, 0.3),
+            0 0 16px -4px rgba(37, 99, 235, 0.2);
+        background: rgba(23, 21, 34, 0.8);
+    }
+
+    /* 主要按钮渐变 */
+    .btn-gradient {
+        background: linear-gradient(135deg, #0284C7 0%, #2563EB 100%);
+        transition: all 0.3s ease;
+    }
+
+    .btn-gradient:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4),
+            0 0 0 2px rgba(37, 99, 235, 0.1);
+    }
+
+    /* 自定义背景纹理 */
+    .pattern-bg {
+        background-color: #13111C;
+        background-image:
+            radial-gradient(circle at 50% 0%, rgba(37, 99, 235, 0.15) 0%, transparent 50%),
+            radial-gradient(circle at 0% 100%, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
+            linear-gradient(90deg, rgba(37, 99, 235, 0.03) 0%, transparent 50%, rgba(99, 102, 241, 0.03) 100%);
+        background-size: 100% 100%, 50% 50%, 100% 100%;
+        background-position: 0 0;
+        opacity: 1;
+    }
+
+    /* 发光效果 */
+    .glow {
+        position: relative;
+    }
+
+    .glow::after {
+        content: '';
+        position: absolute;
+        inset: -1px;
+        background: linear-gradient(135deg, rgba(37, 99, 235, 0.5) 0%, rgba(99, 102, 241, 0.5) 100%);
+        filter: blur(15px);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        z-index: -1;
+    }
+
+    .glow:hover::after {
+        opacity: 0.6;
+    }
+
+    /* 霓虹文字效果 */
+    .neon-text {
+        color: #fff;
+        text-shadow: 0 0 10px rgba(37, 99, 235, 0.5),
+            0 0 20px rgba(37, 99, 235, 0.3),
+            0 0 30px rgba(37, 99, 235, 0.2);
+    }
+}
