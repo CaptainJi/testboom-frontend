@@ -1,5 +1,5 @@
 import apiClient from './config';
-import type { ApiResponse, FileItem, TestCase, Task, DashboardStats } from '../types/api';
+import type { ApiResponse, FileItem, TestCase, Task, DashboardStats, CaseGenerateRequest, ExportRequest } from '../types/api';
 
 // 文件相关接口
 export const fileApi = {
@@ -7,60 +7,72 @@ export const fileApi = {
     upload: async (file: File): Promise<ApiResponse<FileItem>> => {
         const formData = new FormData();
         formData.append('file', file);
-        const response = await apiClient.post<ApiResponse<FileItem>>('/files/upload', formData, {
+        const response = await apiClient.post<ApiResponse<FileItem>>('/api/v1/files/upload', formData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
             },
         });
-        return response;
+        return response.data;
     },
     // 获取文件列表
-    getList: async (): Promise<ApiResponse<FileItem[]>> => {
-        const response = await apiClient.get<ApiResponse<FileItem[]>>('/files');
-        return response;
+    getList: async (params?: { skip?: number; limit?: number; status?: string }): Promise<ApiResponse<FileItem[]>> => {
+        const response = await apiClient.get<ApiResponse<FileItem[]>>('/api/v1/files/', { params });
+        return response.data;
     },
-    // 删除文件
-    delete: async (fileId: string): Promise<ApiResponse<void>> => {
-        const response = await apiClient.delete<ApiResponse<void>>(`/files/${fileId}`);
-        return response;
+    // 获取文件状态
+    getStatus: async (fileId: string): Promise<ApiResponse<FileItem>> => {
+        const response = await apiClient.get<ApiResponse<FileItem>>(`/api/v1/files/${fileId}`);
+        return response.data;
     },
 };
 
 // 测试用例相关接口
 export const caseApi = {
     // 获取用例列表
-    getList: async (): Promise<ApiResponse<TestCase[]>> => {
-        const response = await apiClient.get<ApiResponse<TestCase[]>>('/cases');
-        return response;
+    getList: async (params?: {
+        project?: string;
+        module?: string;
+        level?: string;
+        task_id?: string;
+    }): Promise<ApiResponse<TestCase[]>> => {
+        const response = await apiClient.get<ApiResponse<TestCase[]>>('/api/v1/cases/', { params });
+        return response.data;
     },
     // 获取用例详情
     getDetail: async (caseId: string): Promise<ApiResponse<TestCase>> => {
-        const response = await apiClient.get<ApiResponse<TestCase>>(`/cases/${caseId}`);
-        return response;
+        const response = await apiClient.get<ApiResponse<TestCase>>(`/api/v1/cases/${caseId}`);
+        return response.data;
     },
-    // 导出用例
-    export: async (caseId: string): Promise<ApiResponse<string>> => {
-        const response = await apiClient.get<ApiResponse<string>>(`/cases/${caseId}/export`);
-        return response;
+    // 生成用例
+    generate: async (data: CaseGenerateRequest): Promise<ApiResponse<string>> => {
+        const response = await apiClient.post<ApiResponse<string>>('/api/v1/cases/generate', data);
+        return response.data;
+    },
+    // 导出用例到Excel
+    exportToExcel: async (data: ExportRequest): Promise<Blob> => {
+        const response = await apiClient.post('/api/v1/cases/export/excel', data, {
+            responseType: 'blob'
+        });
+        return response.data;
     },
 };
 
 // 任务相关接口
 export const taskApi = {
     // 获取任务列表
-    getList: async (): Promise<ApiResponse<Task[]>> => {
-        const response = await apiClient.get<ApiResponse<Task[]>>('/tasks');
-        return response;
-    },
-    // 获取任务详情
-    getDetail: async (taskId: string): Promise<ApiResponse<Task>> => {
-        const response = await apiClient.get<ApiResponse<Task>>(`/tasks/${taskId}`);
-        return response;
+    getList: async (params?: {
+        type?: string;
+        status?: string;
+        skip?: number;
+        limit?: number;
+    }): Promise<ApiResponse<Task[]>> => {
+        const response = await apiClient.get<ApiResponse<Task[]>>('/api/v1/cases/tasks', { params });
+        return response.data;
     },
     // 获取任务状态
     getStatus: async (taskId: string): Promise<ApiResponse<Task>> => {
-        const response = await apiClient.get<ApiResponse<Task>>(`/tasks/${taskId}/status`);
-        return response;
+        const response = await apiClient.get<ApiResponse<Task>>(`/api/v1/cases/tasks/${taskId}`);
+        return response.data;
     },
 };
 
@@ -68,7 +80,7 @@ export const taskApi = {
 export const statsApi = {
     // 获取仪表盘统计数据
     getDashboard: async (): Promise<ApiResponse<DashboardStats>> => {
-        const response = await apiClient.get<ApiResponse<DashboardStats>>('/stats/dashboard');
-        return response;
+        const response = await apiClient.get<ApiResponse<DashboardStats>>('/api/v1/stats/dashboard');
+        return response.data;
     },
 }; 
