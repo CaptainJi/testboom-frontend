@@ -5,5 +5,16 @@ services:
     build: .
     ports:
       - "80:80"
+    volumes:
+      - nginx_logs:/var/log/nginx
     extra_hosts:
-      - "host.docker.internal:host-gateway" 
+      - "host.docker.internal:host-gateway"
+    networks:
+      - app_network
+
+volumes:
+  nginx_logs:
+
+networks:
+  app_network:
+    driver: bridge
