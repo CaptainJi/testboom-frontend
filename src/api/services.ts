@@ -1,3 +1,4 @@
+import type { AxiosProgressEvent } from 'axios';
 import apiClient from './config';
 import type { ApiResponse, FileItem, TestCase, Task, DashboardStats, CaseGenerateRequest, ExportRequest, FileList, TestCaseList, TaskList } from '../types/api';
 
@@ -7,9 +8,29 @@ export const fileApi = {
     upload: async (file: File): Promise<ApiResponse<FileItem>> => {
         const formData = new FormData();
         formData.append('file', file);
+        
         const response = await apiClient.post<ApiResponse<FileItem>>('/api/v1/files/upload', formData, {
             headers: {
-                'Content-Type': 'multipart/form-data',
+                // 不要手动设置 Content-Type，让浏览器自动处理
+                // 'Content-Type': 'multipart/form-data',
+            },
+            // 增加超时时间
+            timeout: 300000, // 5分钟
+            // 允许跨域请求携带凭证
+            withCredentials: true,
+            // 关闭大小限制
+            maxContentLength: Infinity,
+            maxBodyLength: Infinity,
+            // 添加上传进度处理
+            onUploadProgress: (progressEvent: any) => {
+                if (progressEvent.total) {
+                    const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                    console.log('上传进度:', percentCompleted + '%');
+                }
+            },
+            // 确保请求超时时有正确的错误处理
+            validateStatus: function (status) {
+                return status >= 200 && status < 300; // 默认值
             },
         });
         return response.data;
@@ -22,6 +43,18 @@ export const fileApi = {
     // 获取文件状态
     getStatus: async (fileId: string): Promise<ApiResponse<FileItem>> => {
         const response = await apiClient.get<ApiResponse<FileItem>>(`/api/v1/files/${fileId}`);
+        return response.data;
+    },
+    // 删除文件
+    delete: async (fileId: string): Promise<ApiResponse<boolean>> => {
+        const response = await apiClient.delete<ApiResponse<boolean>>(`/api/v1/files/${fileId}`);
+        return response.data;
+    },
+    // 批量删除文件
+    batchDelete: async (fileIds: string[]): Promise<ApiResponse<Record<string, boolean>>> => {
+        const response = await apiClient.delete<ApiResponse<Record<string, boolean>>>('/api/v1/files', {
+            data: { file_ids: fileIds }
+        });
         return response.data;
     },
 };
