@@ -2,7 +2,13 @@
 export interface ApiResponse<T> {
     code: number;
     message: string;
-    data: T;
+    data: T | null;
+}
+
+// 通用列表响应类型
+export interface ListResponse<T> {
+    total: number;
+    items: T[];
 }
 
 // 文件相关类型
@@ -10,11 +16,16 @@ export interface FileItem {
     id: string;
     name: string;
     type: string;
-    status: 'processing' | 'completed' | 'failed';
+    status: 'pending' | 'processing' | 'completed' | 'failed';
     path: string;
     error?: string;
     created_at: string;
     updated_at: string;
+}
+
+export interface FileList {
+    total: number;
+    items: FileItem[];
 }
 
 // 测试用例相关类型
@@ -28,6 +39,8 @@ export interface TestCase {
     content: Record<string, any>;
 }
 
+export interface TestCaseList extends ListResponse<TestCase> {}
+
 // 任务相关类型
 export interface Task {
     task_id: string;
@@ -39,6 +52,8 @@ export interface Task {
     created_at: string;
     updated_at: string;
 }
+
+export interface TaskList extends ListResponse<Task> {}
 
 // 用例生成请求
 export interface CaseGenerateRequest {
@@ -55,19 +70,18 @@ export interface ExportRequest {
     task_id?: string;
 }
 
-// 文件状��
-export interface FileStatus {
-    id: string;
-    status: string;
-    storage_url?: string;
-    error?: string;
-}
-
 // 仪表盘统计数据
 export interface DashboardStats {
     total_files: number;
     total_cases: number;
-    total_tasks: number;
-    recent_files: FileItem[];
-    recent_tasks: Task[];
+    recent_files: number;
+    recent_cases: number;
+    case_stats: {
+        by_level: Record<string, number>;
+        by_status: Record<string, number>;
+    };
+    file_stats: {
+        by_type: Record<string, number>;
+        by_status: Record<string, number>;
+    };
 } 

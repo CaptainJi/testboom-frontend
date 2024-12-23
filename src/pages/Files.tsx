@@ -7,25 +7,32 @@ const Files = () => {
     const [isDragging, setIsDragging] = useState(false);
     const [files, setFiles] = useState<FileItem[]>([]);
     const [loading, setLoading] = useState(false);
+    const [total, setTotal] = useState(0);
 
     // 获取文件列表
     const fetchFiles = async () => {
         try {
             setLoading(true);
-            console.log('开始获取文件列表...');
-            const response = await fileApi.getList();
-            console.log('API Response:', response);
-            if (response.code === 0) {
-                const fileList = response.data || [];
-                console.log('解析后的文件列表:', fileList);
-                setFiles(fileList);
+            const response = await fileApi.getList({
+                page: 1,
+                page_size: 10
+            });
+            console.log('API Response:', response); // 添加日志
+            if (response.code === 200 && response.data) {
+                console.log('File List:', response.data); // 添加日志
+                console.log('Items:', response.data.items); // 添加日志
+                console.log('Total:', response.data.total); // 添加日志
+                setFiles(response.data.items || []);
+                setTotal(response.data.total || 0);
             } else {
                 console.error('获取文件列表失败:', response);
                 setFiles([]);
+                setTotal(0);
             }
         } catch (error) {
             console.error('获取文件列表出错:', error);
             setFiles([]);
+            setTotal(0);
         } finally {
             setLoading(false);
         }
@@ -53,7 +60,7 @@ const Files = () => {
         if (file) {
             try {
                 const response = await fileApi.upload(file);
-                if (response.code === 0) {
+                if (response.code === 200) {
                     fetchFiles(); // 重新获取文件列表
                 } else {
                     console.error('文件上传失败:', response);
@@ -70,7 +77,7 @@ const Files = () => {
         if (file) {
             try {
                 const response = await fileApi.upload(file);
-                if (response.code === 0) {
+                if (response.code === 200) {
                     fetchFiles(); // 重新获取文件列表
                 } else {
                     console.error('文件上传失败:', response);
@@ -131,7 +138,7 @@ const Files = () => {
             {/* 文件列表 */}
             <div className="hover-card glow rounded-lg">
                 <div className="p-4">
-                    <h3 className="text-lg font-medium text-slate-200">已上传文件</h3>
+                    <h3 className="text-lg font-medium text-slate-200">已上传文件 ({total})</h3>
                 </div>
                 <div className="p-4">
                     {loading ? (
@@ -165,7 +172,7 @@ const Files = () => {
                                                             file_id: file.id,
                                                             project_name: file.name.split('.')[0]
                                                         });
-                                                        if (response.code === 0) {
+                                                        if (response.code === 200) {
                                                             console.log('生成用例任务已提交:', response.data);
                                                         } else {
                                                             console.error('生成用例失败:', response);

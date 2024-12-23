@@ -2,8 +2,8 @@ import axios from 'axios';
 
 // API基础配置
 export const API_CONFIG = {
-    baseURL: import.meta.env.VITE_API_URL,
-    timeout: Number(import.meta.env.VITE_API_TIMEOUT || 30000)
+    baseURL: '',  // 使用相对路径，由nginx处理代理
+    timeout: 30000
 };
 
 // 创建axios实例
