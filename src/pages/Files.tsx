@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Upload, FileType, AlertCircle } from 'lucide-react';
+import { Upload, FileType, AlertCircle, Trash2 } from 'lucide-react';
 import { fileApi, caseApi } from '../api/services';
 import type { FileItem } from '../types/api';
 
@@ -12,6 +12,7 @@ const Files = () => {
     const [page, setPage] = useState(1);
     const [pageSize] = useState(10);
     const [error, setError] = useState<string | null>(null);
+    const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
 
     // 获取文件列表
     const fetchFiles = async () => {
@@ -27,7 +28,7 @@ const Files = () => {
             }
         } catch (err) {
             console.error('获取文件列表失败:', err);
-            setError('获取文���列表失败');
+            setError('获取文件列表失败');
         } finally {
             setLoading(false);
         }
@@ -141,6 +142,43 @@ const Files = () => {
         return statusMap[status] || status;
     };
 
+    // 处理文件选择
+    const handleSelectFile = (fileId: string) => {
+        setSelectedFiles(prev => {
+            if (prev.includes(fileId)) {
+                return prev.filter(id => id !== fileId);
+            } else {
+                return [...prev, fileId];
+            }
+        });
+    };
+
+    // 处理全选
+    const handleSelectAll = () => {
+        if (selectedFiles.length === files.length) {
+            setSelectedFiles([]);
+        } else {
+            setSelectedFiles(files.map(file => file.id));
+        }
+    };
+
+    // 处理批量删除
+    const handleBatchDelete = async () => {
+        if (selectedFiles.length === 0) return;
+        if (!confirm(`确定要删除选中的 ${selectedFiles.length} 个文件吗？`)) return;
+
+        try {
+            const response = await fileApi.batchDelete(selectedFiles);
+            if (response.code === 200) {
+                setSelectedFiles([]);
+                await fetchFiles();
+            }
+        } catch (err) {
+            console.error('批量删除失败:', err);
+            setError('批量删除失败');
+        }
+    };
+
     return (
         <div className="space-y-6">
             {/* 错误提示 */}
@@ -203,8 +241,17 @@ const Files = () => {
 
             {/* 文件列表 */}
             <div className="hover-card glow rounded-lg">
-                <div className="p-4">
+                <div className="p-4 flex items-center justify-between">
                     <h3 className="text-lg font-medium text-slate-200">已上传文件 ({total})</h3>
+                    {selectedFiles.length > 0 && (
+                        <button
+                            onClick={handleBatchDelete}
+                            className="flex items-center space-x-2 text-red-400 hover:text-red-300"
+                        >
+                            <Trash2 className="h-4 w-4" />
+                            <span>删除选中 ({selectedFiles.length})</span>
+                        </button>
+                    )}
                 </div>
                 <div className="p-4">
                     {loading ? (
@@ -222,13 +269,32 @@ const Files = () => {
                         </div>
                     ) : (
                         <div className="divide-y divide-slate-700">
+                            <div className="flex items-center py-2 px-4">
+                                <div className="flex items-center space-x-4">
+                                    <input
+                                        type="checkbox"
+                                        className="rounded border-slate-700 bg-slate-800"
+                                        checked={selectedFiles.length === files.length}
+                                        onChange={handleSelectAll}
+                                    />
+                                    <span className="text-sm text-slate-400">全选</span>
+                                </div>
+                            </div>
                             {files.map((file) => (
-                                <div key={file.id} className="flex items-center justify-between py-4">
-                                    <div>
-                                        <p className="text-sm font-medium text-slate-200">{file.name}</p>
-                                        <p className="text-sm text-slate-400">{getStatusText(file.status)}</p>
-                                    </div>
+                                <div key={file.id} className="flex items-center justify-between py-4 px-4">
                                     <div className="flex items-center space-x-4">
+                                        <input
+                                            type="checkbox"
+                                            className="rounded border-slate-700 bg-slate-800"
+                                            checked={selectedFiles.includes(file.id)}
+                                            onChange={() => handleSelectFile(file.id)}
+                                        />
+                                        <div>
+                                            <p className="text-sm font-medium text-slate-200">{file.name}</p>
+                                            <p className="text-sm text-slate-400">{getStatusText(file.status)}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center space-x-4 pr-4">
                                         {file.status === 'completed' && (
                                             <button
                                                 className="btn-gradient rounded-md px-3 py-1 text-sm text-white"
