@@ -94,7 +94,7 @@
                     "cases"
                 ],
                 "summary": "List Tasks",
-                "description": "获取任务列表\n\nArgs:\n    type: 任务类型过滤\n    status: 任务状态过滤\n    skip: 跳过的记录数，默认0\n    limit: 返回的最大记录数，默认10，最大100\n    \nReturns:\n    ResponseModel[List[TaskInfo]]: 任务列表",
+                "description": "获取任务列表\n\nArgs:\n    type: 任务类型过滤\n    status: 任务状态过滤\n    page: 页码(从1开始)\n    page_size: 每页数量\n    \nReturns:\n    ResponseModel[List[TaskInfo]]: 任务列表",
                 "operationId": "list_tasks_api_v1_cases_tasks_get",
                 "parameters": [
                     {
@@ -130,36 +130,31 @@
                         }
                     },
                     {
-                        "name": "skip",
+                        "name": "page",
                         "in": "query",
                         "required": false,
                         "schema": {
-                            "anyOf": [
-                                {
-                                    "type": "string"
-                                },
-                                {
-                                    "type": "null"
-                                }
-                            ],
-                            "title": "Skip"
-                        }
+                            "type": "integer",
+                            "minimum": 1,
+                            "description": "页码",
+                            "default": 1,
+                            "title": "Page"
+                        },
+                        "description": "页码"
                     },
                     {
-                        "name": "limit",
+                        "name": "page_size",
                         "in": "query",
                         "required": false,
                         "schema": {
-                            "anyOf": [
-                                {
-                                    "type": "string"
-                                },
-                                {
-                                    "type": "null"
-                                }
-                            ],
-                            "title": "Limit"
-                        }
+                            "type": "integer",
+                            "maximum": 100,
+                            "minimum": 1,
+                            "description": "每页数量",
+                            "default": 10,
+                            "title": "Page Size"
+                        },
+                        "description": "每页数量"
                     }
                 ],
                 "responses": {
@@ -270,6 +265,98 @@
                         }
                     }
                 }
+            },
+            "delete": {
+                "tags": [
+                    "cases"
+                ],
+                "summary": "Delete Case",
+                "description": "删除测试用例",
+                "operationId": "delete_case_api_v1_cases__case_id__delete",
+                "parameters": [
+                    {
+                        "name": "case_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Case Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseModel_bool_"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "cases"
+                ],
+                "summary": "Update Case",
+                "description": "更新测试用例信息",
+                "operationId": "update_case_api_v1_cases__case_id__put",
+                "parameters": [
+                    {
+                        "name": "case_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "Case Id"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CaseUpdate"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseModel_CaseInfo_"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
             }
         },
         "/api/v1/cases/": {
@@ -278,7 +365,7 @@
                     "cases"
                 ],
                 "summary": "List Cases",
-                "description": "获取用例列表",
+                "description": "获取测试用例列表\n\nArgs:\n    project: 项目名称过滤\n    module: 模块名称过滤\n    task_id: 任务ID过滤\n    page: 页码(从1开始)\n    page_size: 每页数量\n    db: 数据库会话\n    \nReturns:\n    ResponseModel[List[CaseInfo]]: 用例列表响应",
                 "operationId": "list_cases_api_v1_cases__get",
                 "parameters": [
                     {
@@ -294,8 +381,10 @@
                                     "type": "null"
                                 }
                             ],
+                            "description": "项目名称过滤",
                             "title": "Project"
-                        }
+                        },
+                        "description": "项目名称过滤"
                     },
                     {
                         "name": "module",
@@ -310,24 +399,10 @@
                                     "type": "null"
                                 }
                             ],
+                            "description": "模块名称过滤",
                             "title": "Module"
-                        }
-                    },
-                    {
-                        "name": "level",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "anyOf": [
-                                {
-                                    "type": "string"
-                                },
-                                {
-                                    "type": "null"
-                                }
-                            ],
-                            "title": "Level"
-                        }
+                        },
+                        "description": "模块名称过滤"
                     },
                     {
                         "name": "task_id",
@@ -342,8 +417,37 @@
                                     "type": "null"
                                 }
                             ],
+                            "description": "任务ID过滤",
                             "title": "Task Id"
-                        }
+                        },
+                        "description": "任务ID过滤"
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "description": "页码",
+                            "default": 1,
+                            "title": "Page"
+                        },
+                        "description": "页码"
+                    },
+                    {
+                        "name": "page_size",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 100,
+                            "minimum": 1,
+                            "description": "每页数量",
+                            "default": 10,
+                            "title": "Page Size"
+                        },
+                        "description": "每页数量"
                     }
                 ],
                 "responses": {
@@ -370,41 +474,83 @@
                 }
             }
         },
+        "/api/v1/cases": {
+            "delete": {
+                "tags": [
+                    "cases"
+                ],
+                "summary": "Batch Delete Cases",
+                "description": "批量删除测试用例",
+                "operationId": "batch_delete_cases_api_v1_cases_delete",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/BatchDeleteCasesRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseModel_Dict_str__bool__"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/files/": {
             "get": {
                 "tags": [
                     "files"
                 ],
                 "summary": "Get Files",
-                "description": "获取文件列表\n\nArgs:\n    skip: 跳过的记录数\n    limit: 返回的最大记录数\n    status: 文件状态过滤\n    db: 数据库会话\n    \nReturns:\n    ResponseModel[FileList]: 文件列表响应",
+                "description": "获取文件列表\n\nArgs:\n    page: 页码(从1开始)\n    page_size: 每页数量\n    status: 文件状态过滤\n    db: 数据库会话\n    \nReturns:\n    ResponseModel[FileList]: 文件列表响应",
                 "operationId": "get_files_api_v1_files__get",
                 "parameters": [
                     {
-                        "name": "skip",
+                        "name": "page",
                         "in": "query",
                         "required": false,
                         "schema": {
                             "type": "integer",
-                            "minimum": 0,
-                            "description": "跳过的记录数",
-                            "default": 0,
-                            "title": "Skip"
+                            "minimum": 1,
+                            "description": "页码",
+                            "default": 1,
+                            "title": "Page"
                         },
-                        "description": "跳过的记录数"
+                        "description": "页码"
                     },
                     {
-                        "name": "limit",
+                        "name": "page_size",
                         "in": "query",
                         "required": false,
                         "schema": {
                             "type": "integer",
                             "maximum": 100,
                             "minimum": 1,
-                            "description": "返回的最大记录数",
+                            "description": "每页数量",
                             "default": 10,
-                            "title": "Limit"
+                            "title": "Page Size"
                         },
-                        "description": "返回的最大记录数"
+                        "description": "每页数量"
                     },
                     {
                         "name": "status",
@@ -532,6 +678,162 @@
                         }
                     }
                 }
+            },
+            "delete": {
+                "tags": [
+                    "files"
+                ],
+                "summary": "Delete File",
+                "description": "删除文件",
+                "operationId": "delete_file_api_v1_files__file_id__delete",
+                "parameters": [
+                    {
+                        "name": "file_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "File Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseModel_bool_"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "files"
+                ],
+                "summary": "Update File",
+                "description": "更新文件信息",
+                "operationId": "update_file_api_v1_files__file_id__put",
+                "parameters": [
+                    {
+                        "name": "file_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "title": "File Id"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/FileUpdate"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseModel_FileInfo_"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/files": {
+            "delete": {
+                "tags": [
+                    "files"
+                ],
+                "summary": "Batch Delete Files",
+                "description": "批量删除文件",
+                "operationId": "batch_delete_files_api_v1_files_delete",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/BatchDeleteRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseModel_Dict_str__bool__"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/dashboard": {
+            "get": {
+                "tags": [
+                    "dashboard"
+                ],
+                "summary": "Get Dashboard Data",
+                "description": "获取仪表盘数据\n\nReturns:\n    ResponseModel[Dict[str, Any]]: 仪表盘数据，包括：\n    - total_files: 文件总数\n    - total_cases: 用例总数\n    - recent_files: 最近上传的文件数（7天内）\n    - recent_cases: 最近生成的用例数（7天内）\n    - case_stats: 用例统计信息（按等级和状态分类）\n    - file_stats: 文件统计信息（按类型和状态分类）",
+                "operationId": "get_dashboard_data_api_v1_dashboard_get",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseModel_Dict_str__Any__"
+                                }
+                            }
+                        }
+                    }
+                }
             }
         },
         "/health": {
@@ -554,6 +856,40 @@
     },
     "components": {
         "schemas": {
+            "BatchDeleteCasesRequest": {
+                "properties": {
+                    "case_ids": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array",
+                        "title": "Case Ids"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "case_ids"
+                ],
+                "title": "BatchDeleteCasesRequest",
+                "description": "批量删除用例请求模型"
+            },
+            "BatchDeleteRequest": {
+                "properties": {
+                    "file_ids": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "type": "array",
+                        "title": "File Ids"
+                    }
+                },
+                "type": "object",
+                "required": [
+                    "file_ids"
+                ],
+                "title": "BatchDeleteRequest",
+                "description": "批量删除请求模型"
+            },
             "Body_upload_file_api_v1_files_upload_post": {
                 "properties": {
                     "file": {
@@ -641,6 +977,79 @@
                 ],
                 "title": "CaseInfo",
                 "description": "用例信息模型"
+            },
+            "CaseUpdate": {
+                "properties": {
+                    "project": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Project"
+                    },
+                    "module": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Module"
+                    },
+                    "name": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Name"
+                    },
+                    "level": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Level"
+                    },
+                    "status": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Status"
+                    },
+                    "content": {
+                        "anyOf": [
+                            {
+                                "type": "object"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Content"
+                    }
+                },
+                "type": "object",
+                "title": "CaseUpdate",
+                "description": "用例更新请求模型"
             },
             "ExportRequest": {
                 "properties": {
@@ -816,6 +1225,46 @@
                 "title": "FileStatus",
                 "description": "文件状态模型"
             },
+            "FileUpdate": {
+                "properties": {
+                    "name": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Name"
+                    },
+                    "status": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Status"
+                    },
+                    "error": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Error"
+                    }
+                },
+                "type": "object",
+                "title": "FileUpdate",
+                "description": "文件更新请求模型"
+            },
             "HTTPValidationError": {
                 "properties": {
                     "detail": {
@@ -854,6 +1303,63 @@
                 },
                 "type": "object",
                 "title": "ResponseModel[CaseInfo]"
+            },
+            "ResponseModel_Dict_str__Any__": {
+                "properties": {
+                    "code": {
+                        "type": "integer",
+                        "title": "Code",
+                        "default": 200
+                    },
+                    "message": {
+                        "type": "string",
+                        "title": "Message",
+                        "default": "success"
+                    },
+                    "data": {
+                        "anyOf": [
+                            {
+                                "type": "object"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Data"
+                    }
+                },
+                "type": "object",
+                "title": "ResponseModel[Dict[str, Any]]"
+            },
+            "ResponseModel_Dict_str__bool__": {
+                "properties": {
+                    "code": {
+                        "type": "integer",
+                        "title": "Code",
+                        "default": 200
+                    },
+                    "message": {
+                        "type": "string",
+                        "title": "Message",
+                        "default": "success"
+                    },
+                    "data": {
+                        "anyOf": [
+                            {
+                                "additionalProperties": {
+                                    "type": "boolean"
+                                },
+                                "type": "object"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Data"
+                    }
+                },
+                "type": "object",
+                "title": "ResponseModel[Dict[str, bool]]"
             },
             "ResponseModel_FileInfo_": {
                 "properties": {
@@ -1018,6 +1524,33 @@
                 },
                 "type": "object",
                 "title": "ResponseModel[TaskInfo]"
+            },
+            "ResponseModel_bool_": {
+                "properties": {
+                    "code": {
+                        "type": "integer",
+                        "title": "Code",
+                        "default": 200
+                    },
+                    "message": {
+                        "type": "string",
+                        "title": "Message",
+                        "default": "success"
+                    },
+                    "data": {
+                        "anyOf": [
+                            {
+                                "type": "boolean"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Data"
+                    }
+                },
+                "type": "object",
+                "title": "ResponseModel[bool]"
             },
             "ResponseModel_str_": {
                 "properties": {

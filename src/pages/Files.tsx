@@ -1,8 +1,40 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Upload, FileType, AlertCircle } from 'lucide-react';
+import { fileApi, caseApi } from '../api/services';
+import type { FileItem } from '../types/api';
 
 const Files = () => {
     const [isDragging, setIsDragging] = useState(false);
+    const [files, setFiles] = useState<FileItem[]>([]);
+    const [loading, setLoading] = useState(false);
+
+    // 获取文件列表
+    const fetchFiles = async () => {
+        try {
+            setLoading(true);
+            console.log('开始获取文件列表...');
+            const response = await fileApi.getList();
+            console.log('API Response:', response);
+            if (response.code === 0) {
+                const fileList = response.data || [];
+                console.log('解析后的文件列表:', fileList);
+                setFiles(fileList);
+            } else {
+                console.error('获取文件列表失败:', response);
+                setFiles([]);
+            }
+        } catch (error) {
+            console.error('获取文件列表出错:', error);
+            setFiles([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // 组件加载时获取文件列表
+    useEffect(() => {
+        fetchFiles();
+    }, []);
 
     const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault();
@@ -14,10 +46,50 @@ const Files = () => {
         setIsDragging(false);
     };
 
-    const handleDrop = (e: React.DragEvent) => {
+    const handleDrop = async (e: React.DragEvent) => {
         e.preventDefault();
         setIsDragging(false);
-        // TODO: 处理文件上传
+        const file = e.dataTransfer.files[0];
+        if (file) {
+            try {
+                const response = await fileApi.upload(file);
+                if (response.code === 0) {
+                    fetchFiles(); // 重新获取文件列表
+                } else {
+                    console.error('文件上传失败:', response);
+                }
+            } catch (error) {
+                console.error('文件上传失败:', error);
+            }
+        }
+    };
+
+    // 处理文件上传
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            try {
+                const response = await fileApi.upload(file);
+                if (response.code === 0) {
+                    fetchFiles(); // 重新获取文件列表
+                } else {
+                    console.error('文件上传失败:', response);
+                }
+            } catch (error) {
+                console.error('文件上传失败:', error);
+            }
+        }
+    };
+
+    // 获取文件状态的中文描述
+    const getStatusText = (status: string) => {
+        const statusMap: Record<string, string> = {
+            'pending': '等待处理',
+            'processing': '处理中',
+            'completed': '已完成',
+            'failed': '处理失败'
+        };
+        return statusMap[status] || status;
     };
 
     return (
@@ -49,9 +121,7 @@ const Files = () => {
                                 type="file"
                                 className="hidden"
                                 accept=".zip"
-                                onChange={(e) => {
-                                    // TODO: 处理文件上传
-                                }}
+                                onChange={handleFileUpload}
                             />
                         </label>
                     </div>
@@ -64,12 +134,55 @@ const Files = () => {
                     <h3 className="text-lg font-medium text-slate-200">已上传文件</h3>
                 </div>
                 <div className="p-4">
-                    <div className="flex items-center justify-center py-8">
-                        <div className="text-center">
-                            <FileType className="mx-auto h-12 w-12 text-slate-500" />
-                            <p className="mt-2 text-sm text-slate-400">暂无文件</p>
+                    {loading ? (
+                        <div className="flex items-center justify-center py-8">
+                            <div className="text-center">
+                                <p className="text-sm text-slate-400">加载中...</p>
+                            </div>
                         </div>
-                    </div>
+                    ) : files.length === 0 ? (
+                        <div className="flex items-center justify-center py-8">
+                            <div className="text-center">
+                                <FileType className="mx-auto h-12 w-12 text-slate-500" />
+                                <p className="mt-2 text-sm text-slate-400">暂无文件</p>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="divide-y divide-slate-700">
+                            {files.map((file) => (
+                                <div key={file.id} className="flex items-center justify-between py-4">
+                                    <div>
+                                        <p className="text-sm font-medium text-slate-200">{file.name}</p>
+                                        <p className="text-sm text-slate-400">{getStatusText(file.status)}</p>
+                                    </div>
+                                    <div className="flex items-center space-x-4">
+                                        {file.status === 'completed' && (
+                                            <button
+                                                className="btn-gradient rounded-md px-3 py-1 text-sm text-white"
+                                                onClick={async () => {
+                                                    try {
+                                                        const response = await caseApi.generate({
+                                                            file_id: file.id,
+                                                            project_name: file.name.split('.')[0]
+                                                        });
+                                                        if (response.code === 0) {
+                                                            console.log('生成用例任务已提交:', response.data);
+                                                        } else {
+                                                            console.error('生成用例失败:', response);
+                                                        }
+                                                    } catch (error) {
+                                                        console.error('生成用例失败:', error);
+                                                    }
+                                                }}
+                                            >
+                                                生成用例
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
 
