@@ -85,7 +85,11 @@ export const caseApi = {
     // 导出用例到Excel
     exportToExcel: async (data: ExportRequest): Promise<Blob> => {
         const response = await apiClient.post('/api/v1/cases/export/excel', data, {
-            responseType: 'blob'
+            responseType: 'blob',
+            headers: {
+                'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'Content-Type': 'application/json'
+            }
         });
         return response.data;
     },

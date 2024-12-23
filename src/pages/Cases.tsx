@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Filter, Download } from 'lucide-react';
 import { caseApi } from '../api/services';
 import type { TestCase } from '../types/api';
+import * as Dialog from '@radix-ui/react-dialog';
 
 const Cases = () => {
     const [cases, setCases] = useState<TestCase[]>([]);
@@ -9,6 +10,9 @@ const Cases = () => {
     const [total, setTotal] = useState(0);
     const [currentTask, setCurrentTask] = useState<string | null>(null);
     const [expandedCaseId, setExpandedCaseId] = useState<string | null>(null);
+    const [exportDialogOpen, setExportDialogOpen] = useState(false);
+    const [selectedCases, setSelectedCases] = useState<string[]>([]);
+    const [exporting, setExporting] = useState(false);
     const [filters, setFilters] = useState({
         project: '',
         module: '',
@@ -67,23 +71,63 @@ const Cases = () => {
         }
     };
 
-    // 导出用例
+    // 处理导出用例
     const handleExport = async () => {
         try {
+            setExporting(true);
+            // 如果选择了特定用例，获取这些用例的完整信息
+            let exportCases = selectedCases.length > 0 
+                ? cases.filter(c => selectedCases.includes(c.case_id))
+                : cases;
+
             const response = await caseApi.exportToExcel({
-                project_name: filters.project,
-                module_name: filters.module,
+                cases: exportCases,  // 传递完整的用例对象数组
+                project_name: filters.project || undefined,
+                module_name: filters.module || undefined
             });
-            // 创建下载链接
-            const url = window.URL.createObjectURL(new Blob([response]));
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', 'testcases.xlsx');
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
+
+            // 检查响应类型
+            if (response instanceof Blob) {
+                // 创建下载链接
+                const url = window.URL.createObjectURL(response);
+                const link = document.createElement('a');
+                link.href = url;
+                const fileName = `测试用例_${new Date().toLocaleDateString()}.xlsx`;
+                link.setAttribute('download', fileName);
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                window.URL.revokeObjectURL(url);
+                setExportDialogOpen(false);
+            } else {
+                throw new Error('导出失败：响应格式不正确');
+            }
         } catch (error) {
             console.error('导出用例失败:', error);
+            // 显示错误消息
+            alert(error instanceof Error ? error.message : '导出失败，请重试');
+        } finally {
+            setExporting(false);
+        }
+    };
+
+    // 处理用例选择
+    const handleCaseSelect = (caseId: string) => {
+        setSelectedCases(prev => {
+            if (prev.includes(caseId)) {
+                return prev.filter(id => id !== caseId);
+            } else {
+                return [...prev, caseId];
+            }
+        });
+    };
+
+    // 处理全选
+    const handleSelectAll = () => {
+        if (selectedCases.length === cases.length) {
+            setSelectedCases([]);
+        } else {
+            setSelectedCases(cases.map(c => c.case_id));
         }
     };
 
@@ -164,7 +208,7 @@ const Cases = () => {
                     </p>
                 </div>
 
-                {/* 如果没有任何内容，显示提示信息 */}
+                {/* 如果���有任何内容，显示提示信息 */}
                 {!content.precondition && !content.steps?.length && !content.remark && (
                     <div className="text-center text-sm text-slate-400">
                         暂无详细内容
@@ -220,7 +264,7 @@ const Cases = () => {
                 </div>
                 <button 
                     className="inline-flex items-center space-x-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-                    onClick={handleExport}
+                    onClick={() => setExportDialogOpen(true)}
                 >
                     <Download className="h-4 w-4" />
                     <span>导出用例</span>
@@ -355,6 +399,64 @@ const Cases = () => {
                     </p>
                 </div>
             </div>
+
+            {/* 导出对话框 */}
+            <Dialog.Root open={exportDialogOpen} onOpenChange={setExportDialogOpen}>
+                <Dialog.Portal>
+                    <Dialog.Overlay className="fixed inset-0 bg-black/50" />
+                    <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-lg bg-slate-800 p-6 shadow-lg">
+                        <Dialog.Title className="text-lg font-medium text-slate-200 mb-4">
+                            导出测试用例
+                        </Dialog.Title>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-400 mb-2">
+                                    导出范围
+                                </label>
+                                <div className="space-y-2">
+                                    <label className="flex items-center space-x-2">
+                                        <input
+                                            type="radio"
+                                            checked={selectedCases.length === 0}
+                                            onChange={() => setSelectedCases([])}
+                                            className="rounded border-slate-700 bg-slate-900"
+                                        />
+                                        <span className="text-sm text-slate-200">导出全部用例</span>
+                                    </label>
+                                    <label className="flex items-center space-x-2">
+                                        <input
+                                            type="radio"
+                                            checked={selectedCases.length > 0}
+                                            onChange={() => setSelectedCases(cases.map(c => c.case_id))}
+                                            className="rounded border-slate-700 bg-slate-900"
+                                        />
+                                        <span className="text-sm text-slate-200">仅导出选中用例 ({selectedCases.length})</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div className="flex justify-end space-x-3 mt-6">
+                                <Dialog.Close asChild>
+                                    <button
+                                        className="px-4 py-2 text-sm text-slate-400 hover:text-slate-300"
+                                    >
+                                        取消
+                                    </button>
+                                </Dialog.Close>
+                                <button
+                                    onClick={handleExport}
+                                    disabled={exporting}
+                                    className={`btn-gradient rounded-md px-4 py-2 text-sm text-white ${
+                                        exporting ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90'
+                                    }`}
+                                >
+                                    {exporting ? '导出中...' : '确认导出'}
+                                </button>
+                            </div>
+                        </div>
+                    </Dialog.Content>
+                </Dialog.Portal>
+            </Dialog.Root>
         </div>
     );
 };

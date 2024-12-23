@@ -64,7 +64,7 @@ export interface CaseGenerateRequest {
 
 // 用例导出请求
 export interface ExportRequest {
-    case_ids?: string[];
+    cases?: TestCase[];
     project_name?: string;
     module_name?: string;
     task_id?: string;
