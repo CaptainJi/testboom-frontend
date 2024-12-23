@@ -412,7 +412,7 @@ const Files = () => {
                     <div>
                         <h4 className="text-sm font-medium text-slate-200">上传说明</h4>
                         <ul className="mt-2 list-inside list-disc text-sm text-slate-400">
-                            <li>支��上传 .zip 格的需求文档</li>
+                            <li>支持上传 .zip 格式的需求文档</li>
                             <li>支持上传 .png、.jpg、.jpeg 格式的图片</li>
                             <li>文件大小不超过 50MB</li>
                             <li>文档内容需要符合规范要求</li>

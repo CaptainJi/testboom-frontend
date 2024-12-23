@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Filter, Download } from 'lucide-react';
+import { Filter, Download, ChevronRight, ChevronDown } from 'lucide-react';
 import { caseApi } from '../api/services';
 import type { TestCase } from '../types/api';
 import * as Dialog from '@radix-ui/react-dialog';
@@ -123,11 +123,38 @@ const Cases = () => {
     };
 
     // 处理全选
-    const handleSelectAll = () => {
-        if (selectedCases.length === cases.length) {
+    const handleSelectAll = async () => {
+        if (selectedCases.length === total) {
+            // 如果已经全选，则取消全选
             setSelectedCases([]);
         } else {
-            setSelectedCases(cases.map(c => c.case_id));
+            // 如果未全选，获取所有用例的ID
+            try {
+                setLoading(true);
+                const allCases = [];
+                const totalPages = Math.ceil(total / filters.page_size);
+                
+                // 获取所有页的用例
+                for (let page = 1; page <= totalPages; page++) {
+                    const response = await caseApi.getList({
+                        ...filters,
+                        page,
+                        page_size: filters.page_size
+                    });
+                    if (response.code === 200 && response.data) {
+                        allCases.push(...response.data.items);
+                    }
+                }
+                
+                // 设置所有用例的ID
+                setSelectedCases(allCases.map(c => c.case_id));
+            } catch (error) {
+                console.error('获取所有用例失败:', error);
+                // 如果获取失败，至少选中当前页的用例
+                setSelectedCases(cases.map(c => c.case_id));
+            } finally {
+                setLoading(false);
+            }
         }
     };
 
@@ -208,7 +235,7 @@ const Cases = () => {
                     </p>
                 </div>
 
-                {/* 如果���有任何内容，显示提示信息 */}
+                {/* 如果没有任何内容，显示提示信息 */}
                 {!content.precondition && !content.steps?.length && !content.remark && (
                     <div className="text-center text-sm text-slate-400">
                         暂无详细内容
@@ -291,61 +318,97 @@ const Cases = () => {
                             </div>
                         </div>
                     ) : (
-                        <div className="divide-y divide-slate-700">
-                            {cases.map((testCase) => (
-                                <div
-                                    key={testCase.case_id}
-                                    className="py-4 px-4 hover:bg-slate-800/50 cursor-pointer"
-                                    onClick={() => setExpandedCaseId(
-                                        expandedCaseId === testCase.case_id ? null : testCase.case_id
-                                    )}
-                                >
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex-1">
-                                            <div className="flex items-center space-x-3">
-                                                <span className="text-sm font-medium text-slate-400">
-                                                    {testCase.content?.id || '-'}
-                                                </span>
-                                                <h4 className="text-sm font-medium text-slate-200">{testCase.name}</h4>
-                                            </div>
-                                            <div className="mt-1 flex items-center space-x-2">
-                                                <span className="px-2 py-0.5 text-xs rounded-md bg-blue-500/10 text-blue-400">
-                                                    {testCase.project}
-                                                </span>
-                                                <span className="text-xs text-slate-500">/</span>
-                                                <span className="px-2 py-0.5 text-xs rounded-md bg-purple-500/10 text-purple-400">
-                                                    {testCase.module}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center space-x-4">
-                                            <span className={`px-2 py-1 text-xs rounded-full ${
-                                                testCase.level === 'P0' ? 'bg-red-500/10 text-red-400' :
-                                                testCase.level === 'P1' ? 'bg-yellow-500/10 text-yellow-400' :
-                                                'bg-green-500/10 text-green-400'
-                                            }`}>
-                                                {getLevelText(testCase.level)}
-                                            </span>
-                                            <span className={`px-2 py-1 text-xs rounded-full ${
-                                                testCase.status === 'approved' ? 'bg-green-500/10 text-green-400' :
-                                                testCase.status === 'rejected' ? 'bg-red-500/10 text-red-400' :
-                                                testCase.status === 'reviewing' ? 'bg-yellow-500/10 text-yellow-400' :
-                                                'bg-blue-500/10 text-blue-400'
-                                            }`}>
-                                                {getStatusText(testCase.status)}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    
-                                    {/* 用例详情 */}
-                                    {expandedCaseId === testCase.case_id && (
-                                        <div className="mt-4 border-t border-slate-700 pt-4">
-                                            {renderCaseContent(testCase.content)}
-                                        </div>
-                                    )}
+                        <>
+                            {/* 全选区域 */}
+                            <div className="flex items-center space-x-4 px-4 mb-4 pb-4 border-b border-slate-700">
+                                <div className="flex items-center h-5">
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedCases.length === total && total > 0}
+                                        onChange={handleSelectAll}
+                                        className="w-4 h-4 rounded border-slate-700 bg-slate-800 focus:ring-primary"
+                                    />
                                 </div>
-                            ))}
-                        </div>
+                                <span className="text-sm text-slate-400">全选</span>
+                            </div>
+                            {/* 用例列表 */}
+                            <div className="divide-y divide-slate-700">
+                                {cases.map((testCase) => (
+                                    <div
+                                        key={testCase.case_id}
+                                        className="py-4 px-4 hover:bg-slate-800/50"
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center space-x-4 flex-1">
+                                                {/* 选择框 */}
+                                                <div className="flex items-center h-5">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedCases.includes(testCase.case_id)}
+                                                        onChange={() => handleCaseSelect(testCase.case_id)}
+                                                        onClick={(e) => e.stopPropagation()}
+                                                        className="w-4 h-4 rounded border-slate-700 bg-slate-800 focus:ring-primary"
+                                                    />
+                                                </div>
+                                                {/* 内容区域 */}
+                                                <div 
+                                                    className="flex-1 cursor-pointer"
+                                                    onClick={() => setExpandedCaseId(
+                                                        expandedCaseId === testCase.case_id ? null : testCase.case_id
+                                                    )}
+                                                >
+                                                    <div className="flex items-center">
+                                                        <span className="text-sm font-medium text-slate-400 mr-3">
+                                                            {testCase.content?.id || '-'}
+                                                        </span>
+                                                        <h4 className="text-sm font-medium text-slate-200">{testCase.name}</h4>
+                                                    </div>
+                                                    <div className="mt-1 flex items-center space-x-2">
+                                                        <span className="px-2 py-0.5 text-xs rounded-md bg-blue-500/10 text-blue-400">
+                                                            {testCase.project}
+                                                        </span>
+                                                        <span className="text-xs text-slate-500">/</span>
+                                                        <span className="px-2 py-0.5 text-xs rounded-md bg-purple-500/10 text-purple-400">
+                                                            {testCase.module}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center space-x-4">
+                                                <span className={`px-2 py-1 text-xs rounded-full ${
+                                                    testCase.level === 'P0' ? 'bg-red-500/10 text-red-400' :
+                                                    testCase.level === 'P1' ? 'bg-yellow-500/10 text-yellow-400' :
+                                                    'bg-green-500/10 text-green-400'
+                                                }`}>
+                                                    {getLevelText(testCase.level)}
+                                                </span>
+                                                <span className={`px-2 py-1 text-xs rounded-full ${
+                                                    testCase.status === 'approved' ? 'bg-green-500/10 text-green-400' :
+                                                    testCase.status === 'rejected' ? 'bg-red-500/10 text-red-400' :
+                                                    testCase.status === 'reviewing' ? 'bg-yellow-500/10 text-yellow-400' :
+                                                    'bg-blue-500/10 text-blue-400'
+                                                }`}>
+                                                    {getStatusText(testCase.status)}
+                                                </span>
+                                                {/* 展开/关闭箭头 */}
+                                                {expandedCaseId === testCase.case_id ? (
+                                                    <ChevronDown className="h-4 w-4 text-slate-400" />
+                                                ) : (
+                                                    <ChevronRight className="h-4 w-4 text-slate-400" />
+                                                )}
+                                            </div>
+                                        </div>
+                                        
+                                        {/* 用例详情 */}
+                                        {expandedCaseId === testCase.case_id && (
+                                            <div className="mt-4 border-t border-slate-700 pt-4 ml-8">
+                                                {renderCaseContent(testCase.content)}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </>
                     )}
                 </div>
                 {/* 分页 */}
