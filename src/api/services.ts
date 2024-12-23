@@ -65,7 +65,6 @@ export const caseApi = {
     getList: async (params?: {
         project?: string;
         module?: string;
-        level?: string;
         task_id?: string;
         page?: number;
         page_size?: number;
@@ -79,8 +78,8 @@ export const caseApi = {
         return response.data;
     },
     // 生成用例
-    generate: async (data: CaseGenerateRequest): Promise<ApiResponse<string>> => {
-        const response = await apiClient.post<ApiResponse<string>>('/api/v1/cases/generate', data);
+    generate: async (params: CaseGenerateRequest): Promise<ApiResponse<string>> => {
+        const response = await apiClient.post<ApiResponse<string>>('/api/v1/cases/generate', params);
         return response.data;
     },
     // 导出用例到Excel
@@ -90,6 +89,21 @@ export const caseApi = {
         });
         return response.data;
     },
+    // 获取任务列表
+    getTasks: async (params?: {
+        type?: string;
+        status?: string;
+        page?: number;
+        page_size?: number;
+    }): Promise<ApiResponse<TaskList>> => {
+        const response = await apiClient.get<ApiResponse<TaskList>>('/api/v1/cases/tasks', { params });
+        return response.data;
+    },
+    // 获取任务状态
+    getTaskStatus: async (taskId: string): Promise<ApiResponse<Task>> => {
+        const response = await apiClient.get<ApiResponse<Task>>(`/api/v1/cases/tasks/${taskId}`);
+        return response.data;
+    }
 };
 
 // 任务相关接口

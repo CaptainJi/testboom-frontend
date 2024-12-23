@@ -1,7 +1,32 @@
 import { useState, useEffect } from 'react';
-import { Upload, FileType, AlertCircle, Trash2 } from 'lucide-react';
+import { Upload, FileType, AlertCircle, Trash2, X } from 'lucide-react';
 import { fileApi, caseApi } from '../api/services';
 import type { FileItem } from '../types/api';
+
+// 对话框组件
+const Dialog = ({ isOpen, onClose, title, children }: { 
+    isOpen: boolean; 
+    onClose: () => void; 
+    title: string;
+    children: React.ReactNode;
+}) => {
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="fixed inset-0 bg-black/50" onClick={onClose} />
+            <div className="relative z-50 w-full max-w-md rounded-lg bg-slate-800 p-6 shadow-xl">
+                <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-medium text-slate-200">{title}</h3>
+                    <button onClick={onClose} className="text-slate-400 hover:text-slate-300">
+                        <X className="h-5 w-5" />
+                    </button>
+                </div>
+                {children}
+            </div>
+        </div>
+    );
+};
 
 const Files = () => {
     const [isDragging, setIsDragging] = useState(false);
@@ -13,6 +38,11 @@ const Files = () => {
     const [pageSize] = useState(10);
     const [error, setError] = useState<string | null>(null);
     const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
+    const [dialogOpen, setDialogOpen] = useState(false);
+    const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
+    const [projectName, setProjectName] = useState('');
+    const [moduleName, setModuleName] = useState('');
+    const [generating, setGenerating] = useState(false);
 
     // 获取文件列表
     const fetchFiles = async () => {
@@ -179,6 +209,39 @@ const Files = () => {
         }
     };
 
+    // 处理生成用例
+    const handleGenerateCase = async (file: FileItem) => {
+        setSelectedFile(file);
+        // 默认使用文件名（不包含扩展名）作为项目名称
+        setProjectName(file.name.split('.')[0]);
+        setModuleName('');
+        setDialogOpen(true);
+    };
+
+    // 确认生成用例
+    const handleConfirmGenerate = async () => {
+        if (!selectedFile || !projectName.trim()) return;
+        
+        setGenerating(true);
+        try {
+            const response = await caseApi.generate({
+                file_id: selectedFile.id,
+                project_name: projectName.trim(),
+                module_name: moduleName.trim() || undefined
+            });
+            if (response.code === 200 && response.data) {
+                // 跳转到任务列表页面
+                window.location.href = `/tasks?task_id=${response.data}`;
+            }
+        } catch (error) {
+            console.error('生成用例失败:', error);
+            setError('生成用例失败');
+        } finally {
+            setGenerating(false);
+            setDialogOpen(false);
+        }
+    };
+
     return (
         <div className="space-y-6">
             {/* 错误提示 */}
@@ -295,27 +358,12 @@ const Files = () => {
                                         </div>
                                     </div>
                                     <div className="flex items-center space-x-4 pr-4">
-                                        {file.status === 'completed' && (
-                                            <button
-                                                className="btn-gradient rounded-md px-3 py-1 text-sm text-white"
-                                                onClick={async () => {
-                                                    try {
-                                                        const response = await caseApi.generate({
-                                                            file_id: file.id,
-                                                            project_name: file.name.split('.')[0]
-                                                        });
-                                                        if (response.code === 200) {
-                                                            window.location.href = '/tasks';
-                                                        }
-                                                    } catch (error) {
-                                                        console.error('生成用例失败:', error);
-                                                        setError('生成用例失败');
-                                                    }
-                                                }}
-                                            >
-                                                生成用例
-                                            </button>
-                                        )}
+                                        <button
+                                            className="btn-gradient rounded-md px-3 py-1 text-sm text-white"
+                                            onClick={() => handleGenerateCase(file)}
+                                        >
+                                            生成用例
+                                        </button>
                                         <button
                                             className="text-sm text-red-400 hover:text-red-300"
                                             onClick={() => handleDelete(file.id)}
@@ -364,7 +412,7 @@ const Files = () => {
                     <div>
                         <h4 className="text-sm font-medium text-slate-200">上传说明</h4>
                         <ul className="mt-2 list-inside list-disc text-sm text-slate-400">
-                            <li>支持上传 .zip 格式的需求文档</li>
+                            <li>支��上传 .zip 格的需求文档</li>
                             <li>支持上传 .png、.jpg、.jpeg 格式的图片</li>
                             <li>文件大小不超过 50MB</li>
                             <li>文档内容需要符合规范要求</li>
@@ -372,6 +420,57 @@ const Files = () => {
                     </div>
                 </div>
             </div>
+
+            {/* 生成用例对话框 */}
+            <Dialog
+                isOpen={dialogOpen}
+                onClose={() => setDialogOpen(false)}
+                title="生成测试用例"
+            >
+                <div className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-slate-400 mb-1">
+                            项目名称 *
+                        </label>
+                        <input
+                            type="text"
+                            value={projectName}
+                            onChange={(e) => setProjectName(e.target.value)}
+                            className="w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 focus:border-cyan-500 focus:outline-none"
+                            placeholder="请输入项目名称"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-slate-400 mb-1">
+                            模块名称
+                        </label>
+                        <input
+                            type="text"
+                            value={moduleName}
+                            onChange={(e) => setModuleName(e.target.value)}
+                            className="w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 focus:border-cyan-500 focus:outline-none"
+                            placeholder="请输入模块名称（可选）"
+                        />
+                    </div>
+                    <div className="flex justify-end space-x-3 mt-6">
+                        <button
+                            onClick={() => setDialogOpen(false)}
+                            className="px-4 py-2 text-sm text-slate-400 hover:text-slate-300"
+                        >
+                            取消
+                        </button>
+                        <button
+                            onClick={handleConfirmGenerate}
+                            disabled={!projectName.trim() || generating}
+                            className={`btn-gradient rounded-md px-4 py-2 text-sm text-white ${
+                                (!projectName.trim() || generating) ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90'
+                            }`}
+                        >
+                            {generating ? '生成中...' : '确认生成'}
+                        </button>
+                    </div>
+                </div>
+            </Dialog>
         </div>
     );
 };

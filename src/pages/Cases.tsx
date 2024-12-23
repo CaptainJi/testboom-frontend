@@ -7,13 +7,16 @@ const Cases = () => {
     const [cases, setCases] = useState<TestCase[]>([]);
     const [loading, setLoading] = useState(false);
     const [total, setTotal] = useState(0);
+    const [currentTask, setCurrentTask] = useState<string | null>(null);
     const [filters, setFilters] = useState({
         project: '',
         module: '',
+        task_id: '',
         page: 1,
         page_size: 10
     });
 
+    // 获取用例列表
     const fetchCases = async () => {
         setLoading(true);
         try {
@@ -21,8 +24,9 @@ const Cases = () => {
             console.log('API Response:', response);
             if (response.code === 200 && response.data) {
                 console.log('Case List:', response.data);
-                setCases(response.data.items);
-                setTotal(response.data.total);
+                // 正确处理返回的数据结构
+                setCases(response.data.items || []);
+                setTotal(response.data.total || 0);
             } else {
                 console.error('获取用例列表失败:', response);
                 setCases([]);
@@ -34,6 +38,31 @@ const Cases = () => {
             setTotal(0);
         } finally {
             setLoading(false);
+        }
+    };
+
+    // 检查任务状态
+    const checkTaskStatus = async (taskId: string) => {
+        try {
+            const response = await caseApi.getTaskStatus(taskId);
+            console.log('Task Status:', response);
+            if (response.code === 200 && response.data) {
+                const task = response.data;
+                if (task.status === 'completed') {
+                    // 任务完成，刷新用例列表
+                    setFilters(prev => ({ ...prev, task_id: taskId }));
+                    setCurrentTask(null);
+                } else if (task.status === 'failed') {
+                    console.error('任务失败:', task.error);
+                    setCurrentTask(null);
+                } else {
+                    // 任务还在进行中，继续轮询
+                    setTimeout(() => checkTaskStatus(taskId), 2000);
+                }
+            }
+        } catch (error) {
+            console.error('检查任务状态失败:', error);
+            setCurrentTask(null);
         }
     };
 
@@ -56,6 +85,39 @@ const Cases = () => {
             console.error('导出用例失败:', error);
         }
     };
+
+    // 获取用例等级的中文描述
+    const getLevelText = (level: string) => {
+        const levelMap: Record<string, string> = {
+            'P0': 'P0-高',
+            'P1': 'P1-中',
+            'P2': 'P2-低'
+        };
+        return levelMap[level] || level;
+    };
+
+    // 获取用例状态的中文描述
+    const getStatusText = (status: string) => {
+        const statusMap: Record<string, string> = {
+            'draft': '草稿',
+            'reviewing': '审核中',
+            'approved': '已通过',
+            'rejected': '已拒绝'
+        };
+        return statusMap[status] || status;
+    };
+
+    useEffect(() => {
+        // 从URL中获取task_id参数
+        const urlParams = new URLSearchParams(window.location.search);
+        const taskId = urlParams.get('task_id');
+        if (taskId) {
+            setCurrentTask(taskId);
+            setFilters(prev => ({ ...prev, task_id: taskId }));
+            // 开始轮询任务状态
+            checkTaskStatus(taskId);
+        }
+    }, []);
 
     useEffect(() => {
         fetchCases();
@@ -122,17 +184,30 @@ const Cases = () => {
                             {cases.map((testCase) => (
                                 <div
                                     key={testCase.case_id}
-                                    className="flex items-center justify-between py-4"
+                                    className="flex items-center justify-between py-4 px-4 hover:bg-slate-800/50"
                                 >
-                                    <div>
+                                    <div className="flex-1">
                                         <h4 className="text-sm font-medium text-slate-200">{testCase.name}</h4>
                                         <p className="mt-1 text-xs text-slate-400">
                                             {testCase.project} / {testCase.module}
                                         </p>
                                     </div>
                                     <div className="flex items-center space-x-4">
-                                        <span className="text-xs text-slate-400">{testCase.level}</span>
-                                        <span className="text-xs text-slate-400">{testCase.status}</span>
+                                        <span className={`px-2 py-1 text-xs rounded-full ${
+                                            testCase.level === 'P0' ? 'bg-red-500/10 text-red-400' :
+                                            testCase.level === 'P1' ? 'bg-yellow-500/10 text-yellow-400' :
+                                            'bg-green-500/10 text-green-400'
+                                        }`}>
+                                            {getLevelText(testCase.level)}
+                                        </span>
+                                        <span className={`px-2 py-1 text-xs rounded-full ${
+                                            testCase.status === 'approved' ? 'bg-green-500/10 text-green-400' :
+                                            testCase.status === 'rejected' ? 'bg-red-500/10 text-red-400' :
+                                            testCase.status === 'reviewing' ? 'bg-yellow-500/10 text-yellow-400' :
+                                            'bg-blue-500/10 text-blue-400'
+                                        }`}>
+                                            {getStatusText(testCase.status)}
+                                        </span>
                                     </div>
                                 </div>
                             ))}
@@ -141,22 +216,22 @@ const Cases = () => {
                 </div>
             </div>
 
-            {/* 用例计 */}
+            {/* 用例统计 */}
             <div className="grid gap-6 md:grid-cols-3">
-                <div className="rounded-lg border bg-card p-4">
-                    <h4 className="text-sm font-medium text-muted-foreground">总用例数</h4>
-                    <p className="mt-2 text-2xl font-bold">{cases.length}</p>
+                <div className="hover-card glow rounded-lg p-4">
+                    <h4 className="text-sm font-medium text-slate-400">总用例数</h4>
+                    <p className="mt-2 text-2xl font-bold text-slate-200">{total}</p>
                 </div>
-                <div className="rounded-lg border bg-card p-4">
-                    <h4 className="text-sm font-medium text-muted-foreground">已导出</h4>
-                    <p className="mt-2 text-2xl font-bold">
-                        {cases.filter(c => c.status === 'exported').length}
+                <div className="hover-card glow rounded-lg p-4">
+                    <h4 className="text-sm font-medium text-slate-400">已通过</h4>
+                    <p className="mt-2 text-2xl font-bold text-slate-200">
+                        {cases.filter(c => c.status === 'approved').length}
                     </p>
                 </div>
-                <div className="rounded-lg border bg-card p-4">
-                    <h4 className="text-sm font-medium text-muted-foreground">生成中</h4>
-                    <p className="mt-2 text-2xl font-bold">
-                        {cases.filter(c => c.status === 'generating').length}
+                <div className="hover-card glow rounded-lg p-4">
+                    <h4 className="text-sm font-medium text-slate-400">审核中</h4>
+                    <p className="mt-2 text-2xl font-bold text-slate-200">
+                        {cases.filter(c => c.status === 'reviewing').length}
                     </p>
                 </div>
             </div>
