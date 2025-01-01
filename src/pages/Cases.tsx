@@ -320,6 +320,58 @@ const Cases = () => {
 
     return (
         <div className="space-y-6">
+            {/* 筛选和操作栏 - 移动到顶部 */}
+            <div className="hover-card glow rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                        <button className="inline-flex items-center space-x-2 rounded-md border bg-card px-4 py-2 text-sm font-medium hover:bg-accent">
+                            <Filter className="h-4 w-4" />
+                            <span>筛选</span>
+                        </button>
+                        <div className="flex items-center space-x-2">
+                            <select 
+                                className="rounded-md border bg-background px-3 py-2 text-sm"
+                                value={filters.project}
+                                onChange={(e) => setFilters(prev => ({ ...prev, project: e.target.value }))}
+                            >
+                                <option value="">所有项目</option>
+                                {projects.map((project) => (
+                                    <option key={project} value={project}>
+                                        {project}
+                                    </option>
+                                ))}
+                            </select>
+                            <select 
+                                className="rounded-md border bg-background px-3 py-2 text-sm"
+                                value={filters.module}
+                                onChange={(e) => setFilters(prev => ({ ...prev, module: e.target.value }))}
+                            >
+                                <option value="">所有模块</option>
+                                {/* 这里可以添加模块选项 */}
+                            </select>
+                        </div>
+                    </div>
+                    <div className="flex items-center space-x-4">
+                        <button
+                            className="inline-flex items-center space-x-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                            onClick={() => {
+                                fetchTasks();
+                                setTaskDialogOpen(true);
+                            }}
+                        >
+                            <span>选择任务</span>
+                        </button>
+                        <button 
+                            className="inline-flex items-center space-x-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                            onClick={() => setExportDialogOpen(true)}
+                        >
+                            <Download className="h-4 w-4" />
+                            <span>导出用例</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             {/* 思维导图区域 */}
             {currentTask && (
                 <div className="hover-card glow rounded-lg p-4">
@@ -329,56 +381,6 @@ const Cases = () => {
                     <MindMap taskId={currentTask} />
                 </div>
             )}
-
-            {/* 筛选和操作栏 */}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                    <button className="inline-flex items-center space-x-2 rounded-md border bg-card px-4 py-2 text-sm font-medium hover:bg-accent">
-                        <Filter className="h-4 w-4" />
-                        <span>筛选</span>
-                    </button>
-                    <div className="flex items-center space-x-2">
-                        <select 
-                            className="rounded-md border bg-background px-3 py-2 text-sm"
-                            value={filters.project}
-                            onChange={(e) => setFilters(prev => ({ ...prev, project: e.target.value }))}
-                        >
-                            <option value="">所有项目</option>
-                            {projects.map((project) => (
-                                <option key={project} value={project}>
-                                    {project}
-                                </option>
-                            ))}
-                        </select>
-                        <select 
-                            className="rounded-md border bg-background px-3 py-2 text-sm"
-                            value={filters.module}
-                            onChange={(e) => setFilters(prev => ({ ...prev, module: e.target.value }))}
-                        >
-                            <option value="">所有模块</option>
-                            {/* 这里可以添加模块选项 */}
-                        </select>
-                    </div>
-                </div>
-                <div className="flex items-center space-x-4">
-                    <button
-                        className="inline-flex items-center space-x-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-                        onClick={() => {
-                            fetchTasks();
-                            setTaskDialogOpen(true);
-                        }}
-                    >
-                        <span>选择任务</span>
-                    </button>
-                    <button 
-                        className="inline-flex items-center space-x-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-                        onClick={() => setExportDialogOpen(true)}
-                    >
-                        <Download className="h-4 w-4" />
-                        <span>导出用例</span>
-                    </button>
-                </div>
-            </div>
 
             {/* 用例列表 */}
             <div className="hover-card glow rounded-lg">
