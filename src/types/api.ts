@@ -84,4 +84,15 @@ export interface DashboardStats {
         by_type: Record<string, number>;
         by_status: Record<string, number>;
     };
+}
+
+export interface PlantUMLStatus {
+    status: 'pending' | 'processing' | 'completed' | 'failed';
+    message: string;
+    mindmap?: string;
+}
+
+export interface PlantUMLContent {
+    content: string;
+    task_id: string;
 } 

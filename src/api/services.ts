@@ -1,6 +1,6 @@
 import type { AxiosProgressEvent } from 'axios';
 import apiClient from './config';
-import type { ApiResponse, FileItem, TestCase, Task, DashboardStats, CaseGenerateRequest, ExportRequest, FileList, TestCaseList, TaskList } from '../types/api';
+import type { ApiResponse, FileItem, TestCase, Task, DashboardStats, CaseGenerateRequest, ExportRequest, FileList, TestCaseList, TaskList, PlantUMLStatus, PlantUMLContent } from '../types/api';
 
 // 文件相关接口
 export const fileApi = {
@@ -100,14 +100,38 @@ export const caseApi = {
         page?: number;
         page_size?: number;
     }): Promise<ApiResponse<TaskList>> => {
-        const response = await apiClient.get<ApiResponse<TaskList>>('/api/v1/cases/tasks', { params });
+        const response = await apiClient.get<ApiResponse<TaskList>>('/api/v1/cases/tasks', { 
+            params: {
+                type: params?.type,
+                status: params?.status,
+                page: params?.page || 1,
+                page_size: params?.page_size || 10
+            }
+        });
         return response.data;
     },
     // 获取任务状态
     getTaskStatus: async (taskId: string): Promise<ApiResponse<Task>> => {
         const response = await apiClient.get<ApiResponse<Task>>(`/api/v1/cases/tasks/${taskId}`);
         return response.data;
-    }
+    },
+    // 获取思维导图状态
+    getPlantUMLStatus: async (taskId: string): Promise<ApiResponse<PlantUMLStatus>> => {
+        const response = await apiClient.get<ApiResponse<PlantUMLStatus>>(`/api/v1/cases/plantuml/status/${taskId}`);
+        return response.data;
+    },
+    // 获取思维导图内容
+    getPlantUMLContent: async (taskId: string): Promise<ApiResponse<PlantUMLContent>> => {
+        const response = await apiClient.get<ApiResponse<PlantUMLContent>>(`/api/v1/cases/plantuml/content/${taskId}`);
+        return response.data;
+    },
+    // 导出思维导图
+    exportPlantUML: async (taskId: string, format: 'svg' | 'png' = 'svg') => {
+        const response = await apiClient.post<ApiResponse<Blob>>(`/api/v1/cases/plantuml/export/${taskId}?format=${format}`, {}, {
+            responseType: 'blob'
+        });
+        return response.data;
+    },
 };
 
 // 任务相关接口

@@ -1,14 +1,17 @@
 import { useState, useEffect } from 'react';
 import { Filter, Download, ChevronRight, ChevronDown } from 'lucide-react';
 import { caseApi } from '../api/services';
-import type { TestCase } from '../types/api';
+import type { TestCase, TaskInfo } from '../types/api';
 import * as Dialog from '@radix-ui/react-dialog';
+import MindMap from '../components/MindMap';
 
 const Cases = () => {
     const [cases, setCases] = useState<TestCase[]>([]);
     const [loading, setLoading] = useState(false);
     const [total, setTotal] = useState(0);
     const [currentTask, setCurrentTask] = useState<string | null>(null);
+    const [tasks, setTasks] = useState<TaskInfo[]>([]);
+    const [projects, setProjects] = useState<string[]>([]);
     const [expandedCaseId, setExpandedCaseId] = useState<string | null>(null);
     const [exportDialogOpen, setExportDialogOpen] = useState(false);
     const [selectedCases, setSelectedCases] = useState<string[]>([]);
@@ -20,6 +23,35 @@ const Cases = () => {
         page: 1,
         page_size: 10
     });
+    const [taskDialogOpen, setTaskDialogOpen] = useState(false);
+
+    // 获取任务列表
+    const fetchTasks = async () => {
+        try {
+            console.log('开始获取任务列表...');
+            const response = await caseApi.getTasks({
+                page: 1,
+                page_size: 100
+            });
+            console.log('任务列表响应:', response);
+            
+            if (response.code === 200 && response.data) {
+                // response.data 直接就是任务数组
+                const taskList = response.data;
+                console.log('任务列表:', taskList);
+                setTasks(taskList);
+            }
+        } catch (error) {
+            console.error('获取任务列表失败:', error);
+            setTasks([]);
+        }
+    };
+
+    // 获取所有项目列表
+    const updateProjectsList = (caseList: TestCase[]) => {
+        const uniqueProjects = Array.from(new Set(caseList.map(c => c.project))).sort();
+        setProjects(uniqueProjects);
+    };
 
     // 获取用例列表
     const fetchCases = async () => {
@@ -29,9 +61,10 @@ const Cases = () => {
             console.log('API Response:', response);
             if (response.code === 200 && response.data) {
                 console.log('Case List:', response.data);
-                // 正确处理返回的数据结构
-                setCases(response.data.items || []);
+                const caseList = response.data.items || [];
+                setCases(caseList);
                 setTotal(response.data.total || 0);
+                updateProjectsList(caseList);
             } else {
                 console.error('获取用例列表失败:', response);
                 setCases([]);
@@ -44,6 +77,28 @@ const Cases = () => {
         } finally {
             setLoading(false);
         }
+    };
+
+    // 处理任务切换
+    const handleTaskChange = (taskId: string) => {
+        console.log('Switching to task:', taskId);
+        setCurrentTask(taskId);
+        
+        // 更新过滤条件
+        setFilters(prev => {
+            const newFilters = {
+                ...prev,
+                task_id: taskId,
+                page: 1
+            };
+            console.log('New filters:', newFilters);
+            return newFilters;
+        });
+        
+        // 清空选中的用例
+        setSelectedCases([]);
+        // 重置展开的用例
+        setExpandedCaseId(null);
     };
 
     // 检查任务状态
@@ -246,16 +301,18 @@ const Cases = () => {
     };
 
     useEffect(() => {
+        // 初始化时获取任务列表
+        fetchTasks();
+        
         // 从URL中获取task_id参数
         const urlParams = new URLSearchParams(window.location.search);
         const taskId = urlParams.get('task_id');
         if (taskId) {
-            setCurrentTask(taskId);
-            setFilters(prev => ({ ...prev, task_id: taskId }));
+            handleTaskChange(taskId);
             // 开始轮询任务状态
             checkTaskStatus(taskId);
         }
-    }, []);
+    }, []); // 仅在组件挂载时执行一次
 
     useEffect(() => {
         fetchCases();
@@ -263,6 +320,16 @@ const Cases = () => {
 
     return (
         <div className="space-y-6">
+            {/* 思维导图区域 */}
+            {currentTask && (
+                <div className="hover-card glow rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-medium text-slate-200">测试用例思维导图</h3>
+                    </div>
+                    <MindMap taskId={currentTask} />
+                </div>
+            )}
+
             {/* 筛选和操作栏 */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
@@ -277,7 +344,11 @@ const Cases = () => {
                             onChange={(e) => setFilters(prev => ({ ...prev, project: e.target.value }))}
                         >
                             <option value="">所有项目</option>
-                            {/* 这里可以添加项目选项 */}
+                            {projects.map((project) => (
+                                <option key={project} value={project}>
+                                    {project}
+                                </option>
+                            ))}
                         </select>
                         <select 
                             className="rounded-md border bg-background px-3 py-2 text-sm"
@@ -289,13 +360,24 @@ const Cases = () => {
                         </select>
                     </div>
                 </div>
-                <button 
-                    className="inline-flex items-center space-x-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-                    onClick={() => setExportDialogOpen(true)}
-                >
-                    <Download className="h-4 w-4" />
-                    <span>导出用例</span>
-                </button>
+                <div className="flex items-center space-x-4">
+                    <button
+                        className="inline-flex items-center space-x-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                        onClick={() => {
+                            fetchTasks();
+                            setTaskDialogOpen(true);
+                        }}
+                    >
+                        <span>选择任务</span>
+                    </button>
+                    <button 
+                        className="inline-flex items-center space-x-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                        onClick={() => setExportDialogOpen(true)}
+                    >
+                        <Download className="h-4 w-4" />
+                        <span>导出用例</span>
+                    </button>
+                </div>
             </div>
 
             {/* 用例列表 */}
@@ -514,6 +596,73 @@ const Cases = () => {
                                     }`}
                                 >
                                     {exporting ? '导出中...' : '确认导出'}
+                                </button>
+                            </div>
+                        </div>
+                    </Dialog.Content>
+                </Dialog.Portal>
+            </Dialog.Root>
+
+            {/* 任务选择对话框 */}
+            <Dialog.Root open={taskDialogOpen} onOpenChange={setTaskDialogOpen}>
+                <Dialog.Portal>
+                    <Dialog.Overlay className="fixed inset-0 bg-black/50" />
+                    <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-lg bg-slate-800 p-6 shadow-lg w-[480px]">
+                        <Dialog.Title className="text-lg font-medium text-slate-200 mb-4 flex justify-between items-center">
+                            <span>选择任务</span>
+                            <span className="text-sm text-slate-400">
+                                共 {tasks.length} 个任务
+                            </span>
+                        </Dialog.Title>
+                        <div className="space-y-4">
+                            {tasks.length === 0 ? (
+                                <div className="text-center py-8 text-slate-400">
+                                    暂无任务数据
+                                </div>
+                            ) : (
+                                <div className="max-h-[400px] overflow-y-auto">
+                                    {tasks.map((task) => (
+                                        <div
+                                            key={task.task_id}
+                                            className={`flex items-center justify-between p-3 rounded-md cursor-pointer hover:bg-slate-700 ${
+                                                currentTask === task.task_id ? 'bg-slate-700' : ''
+                                            }`}
+                                            onClick={() => {
+                                                handleTaskChange(task.task_id);
+                                                setTaskDialogOpen(false);
+                                            }}
+                                        >
+                                            <div>
+                                                <div className="text-sm font-medium text-slate-200">
+                                                    生成任务 - {task.result?.cases_count || 0} 个用例
+                                                </div>
+                                                <div className="text-xs text-slate-400">
+                                                    创建时间：{new Date(task.created_at).toLocaleString()}
+                                                </div>
+                                            </div>
+                                            <div className={`px-2 py-1 text-xs rounded-full ${
+                                                task.status === 'completed' ? 'bg-green-500/10 text-green-400' :
+                                                task.status === 'failed' ? 'bg-red-500/10 text-red-400' :
+                                                'bg-yellow-500/10 text-yellow-400'
+                                            }`}>
+                                                {task.status === 'completed' ? '已完成' :
+                                                 task.status === 'failed' ? '失败' : '进行中'}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                            <div className="flex justify-end space-x-3 mt-6">
+                                <Dialog.Close asChild>
+                                    <button className="px-4 py-2 text-sm text-slate-400 hover:text-slate-300">
+                                        取消
+                                    </button>
+                                </Dialog.Close>
+                                <button
+                                    onClick={fetchTasks}
+                                    className="btn-gradient rounded-md px-4 py-2 text-sm text-white hover:opacity-90"
+                                >
+                                    刷新列表
                                 </button>
                             </div>
                         </div>
