@@ -12,6 +12,13 @@ services:
     networks:
       - app_network
 
+  plantuml:
+    image: plantuml/plantuml-server:latest
+    ports:
+      - "8080:8080"
+    networks:
+      - app_network
+
 volumes:
   nginx_logs:
 

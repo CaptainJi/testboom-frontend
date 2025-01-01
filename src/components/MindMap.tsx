@@ -1,47 +1,66 @@
-import { useEffect, useState } from 'react';
-import { caseApi } from '../api/services';
+import { useState, useEffect } from 'react';
 import { AlertCircle } from 'lucide-react';
+import { caseApi } from '../api/services';
+import PlantUMLViewer from './PlantUMLViewer';
 
 interface MindMapProps {
-    taskId: string | null;
+    taskId: string;
 }
 
-const MindMap = ({ taskId }: MindMapProps) => {
-    const [mindmapSvg, setMindmapSvg] = useState<string>('');
+const MindMap: React.FC<MindMapProps> = ({ taskId }) => {
+    const [mindmapCode, setMindmapCode] = useState<string>('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [retryCount, setRetryCount] = useState(0);
 
     useEffect(() => {
         const fetchMindmap = async () => {
-            if (!taskId) return;
+            if (!taskId) {
+                console.error('taskId 为空');
+                setError('任务 ID 不能为空');
+                return;
+            }
             
             setLoading(true);
             setError(null);
             try {
                 // 获取思维导图状态
-                const statusResponse = await caseApi.getPlantUMLStatus(taskId);
-                console.log('思维导图状态:', statusResponse);
+                console.log('开始获取思维导图状态, taskId:', taskId, '重试次数:', retryCount);
+                const response = await caseApi.getPlantUMLStatus(taskId);
+                console.log('思维导图状态响应:', JSON.stringify(response, null, 2));
                 
-                if (statusResponse.code === 200 && statusResponse.data) {
-                    if (statusResponse.data.status === 'success') {
-                        // 如果状态成功，直接使用状态接口返回的思维导图内容
-                        if (statusResponse.data.mindmap) {
-                            setMindmapSvg(statusResponse.data.mindmap);
-                        } else {
-                            setError('思维导图内容为空');
-                        }
-                    } else if (statusResponse.data.status === 'failed') {
-                        setError(statusResponse.data.message || '思维导图生成失败');
+                if (response.code === 200) {
+                    if (response.data) {
+                        console.log('设置思维导图内容');
+                        setMindmapCode(response.data);
+                        setRetryCount(0); // 重置重试次数
                     } else {
-                        // 如果还在生成中，继续轮询
-                        setTimeout(() => fetchMindmap(), 2000);
+                        console.error('思维导图内容为空');
+                        setError('思维导图内容为空');
+                        setMindmapCode('');
+                        
+                        // 如果内容为空，可能还在生成中，继续轮询
+                        if (retryCount < 30) {
+                            console.log('思维导图生成中，2秒后重试');
+                            setRetryCount(prev => prev + 1);
+                            setTimeout(() => fetchMindmap(), 2000);
+                        } else {
+                            console.error('重试次数超过限制');
+                            setError('思维导图生成超时');
+                            setRetryCount(0);
+                        }
                     }
                 } else {
-                    setError('获取思维导图状态失败');
+                    console.error('获取思维导图失败:', response.message);
+                    setError(response.message || '获取思维导图失败');
+                    setMindmapCode('');
+                    setRetryCount(0); // 重置重试次数
                 }
             } catch (err) {
-                setError('获取思维导图失败');
                 console.error('获取思维导图失败:', err);
+                setError(`获取思维导图失败: ${err.message}`);
+                setMindmapCode('');
+                setRetryCount(0); // 重置重试次数
             } finally {
                 setLoading(false);
             }
@@ -54,7 +73,9 @@ const MindMap = ({ taskId }: MindMapProps) => {
         return (
             <div className="flex items-center justify-center py-8">
                 <div className="text-center">
-                    <p className="text-sm text-slate-400">正在加载思维导图...</p>
+                    <p className="text-sm text-slate-400">
+                        正在生成思维导图...{retryCount > 0 ? `(${retryCount}/30)` : ''}
+                    </p>
                 </div>
             </div>
         );
@@ -71,17 +92,11 @@ const MindMap = ({ taskId }: MindMapProps) => {
         );
     }
 
-    if (!mindmapSvg) {
+    if (!mindmapCode) {
         return null;
     }
 
-    return (
-        <div className="w-full overflow-x-auto">
-            <pre className="text-sm text-slate-200 whitespace-pre-wrap">
-                {mindmapSvg}
-            </pre>
-        </div>
-    );
+    return <PlantUMLViewer code={mindmapCode} />;
 };
 
 export default MindMap; 

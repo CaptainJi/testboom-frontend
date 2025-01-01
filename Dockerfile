@@ -3,7 +3,10 @@ FROM node:18 as builder
 
 WORKDIR /app
 COPY package*.json ./
+# 使用淘宝 npm 镜像
+RUN npm config set registry https://registry.npmmirror.com
 RUN npm install
+RUN npm install plantuml-encoder
 COPY . .
 RUN npm run build
 

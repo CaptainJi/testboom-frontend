@@ -86,12 +86,6 @@ export interface DashboardStats {
     };
 }
 
-export interface PlantUMLStatus {
-    status: 'pending' | 'processing' | 'completed' | 'failed';
-    message: string;
-    mindmap?: string;
-}
-
 export interface PlantUMLContent {
     content: string;
     task_id: string;

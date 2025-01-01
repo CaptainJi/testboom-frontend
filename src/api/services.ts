@@ -126,10 +126,12 @@ export const caseApi = {
         return response.data;
     },
     // 导出思维导图
-    exportPlantUML: async (taskId: string, format: 'svg' | 'png' = 'svg') => {
-        const response = await apiClient.post<ApiResponse<Blob>>(`/api/v1/cases/plantuml/export/${taskId}?format=${format}`, {}, {
-            responseType: 'blob'
-        });
+    exportPlantUML: async (taskId: string, format: 'svg' | 'png' = 'svg'): Promise<Blob> => {
+        const response = await apiClient.post<Blob>(
+            `/api/v1/cases/plantuml/export/${taskId}?format=${format}`,
+            {},
+            { responseType: 'blob' }
+        );
         return response.data;
     },
 };
