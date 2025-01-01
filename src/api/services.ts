@@ -116,9 +116,10 @@ export const caseApi = {
         return response.data;
     },
     // 获取思维导图状态
-    getPlantUMLStatus: async (taskId: string): Promise<ApiResponse<PlantUMLStatus>> => {
-        const response = await apiClient.get<ApiResponse<PlantUMLStatus>>(`/api/v1/cases/plantuml/status/${taskId}`);
-        return response.data;
+    getPlantUMLStatus: async (taskId: string, params?: { page_size?: number }) => {
+        const queryParams = params ? `?${new URLSearchParams(params as any).toString()}` : '';
+        const response = await fetch(`/api/v1/cases/plantuml/status/${taskId}${queryParams}`);
+        return response.json();
     },
     // 获取思维导图内容
     getPlantUMLContent: async (taskId: string): Promise<ApiResponse<PlantUMLContent>> => {

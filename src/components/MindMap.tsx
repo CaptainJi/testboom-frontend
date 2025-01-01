@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { AlertCircle } from 'lucide-react';
 import { caseApi } from '../api/services';
-import PlantUMLViewer from './PlantUMLViewer';
+import EditableMindMap from './EditableMindMap';
 
 interface MindMapProps {
     taskId: string;
@@ -24,22 +24,20 @@ const MindMap: React.FC<MindMapProps> = ({ taskId }) => {
             setLoading(true);
             setError(null);
             try {
-                // 获取思维导图状态
                 console.log('开始获取思维导图状态, taskId:', taskId, '重试次数:', retryCount);
-                const response = await caseApi.getPlantUMLStatus(taskId);
+                const response = await caseApi.getPlantUMLStatus(taskId, { page_size: 1000 });
                 console.log('思维导图状态响应:', JSON.stringify(response, null, 2));
                 
                 if (response.code === 200) {
                     if (response.data) {
                         console.log('设置思维导图内容');
                         setMindmapCode(response.data);
-                        setRetryCount(0); // 重置重试次数
+                        setRetryCount(0);
                     } else {
                         console.error('思维导图内容为空');
                         setError('思维导图内容为空');
                         setMindmapCode('');
                         
-                        // 如果内容为空，可能还在生成中，继续轮询
                         if (retryCount < 30) {
                             console.log('思维导图生成中，2秒后重试');
                             setRetryCount(prev => prev + 1);
@@ -54,13 +52,13 @@ const MindMap: React.FC<MindMapProps> = ({ taskId }) => {
                     console.error('获取思维导图失败:', response.message);
                     setError(response.message || '获取思维导图失败');
                     setMindmapCode('');
-                    setRetryCount(0); // 重置重试次数
+                    setRetryCount(0);
                 }
             } catch (err) {
                 console.error('获取思维导图失败:', err);
                 setError(`获取思维导图失败: ${err.message}`);
                 setMindmapCode('');
-                setRetryCount(0); // 重置重试次数
+                setRetryCount(0);
             } finally {
                 setLoading(false);
             }
@@ -68,6 +66,11 @@ const MindMap: React.FC<MindMapProps> = ({ taskId }) => {
 
         fetchMindmap();
     }, [taskId]);
+
+    const handleMindMapChange = async (data: any) => {
+        // TODO: 实现保存功能
+        console.log('思维导图数据已更新:', data);
+    };
 
     if (loading) {
         return (
@@ -96,7 +99,7 @@ const MindMap: React.FC<MindMapProps> = ({ taskId }) => {
         return null;
     }
 
-    return <PlantUMLViewer code={mindmapCode} />;
+    return <EditableMindMap initialData={mindmapCode} onChange={handleMindMapChange} />;
 };
 
 export default MindMap; 

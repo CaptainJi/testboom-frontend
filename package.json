@@ -13,6 +13,7 @@
     "@radix-ui/react-dialog": "^1.0.5",
     "@radix-ui/react-dropdown-menu": "^2.0.6",
     "@radix-ui/react-slot": "^1.0.2",
+    "@reactflow/node-resizer": "^2.1.0",
     "@reduxjs/toolkit": "^2.0.1",
     "@tailwindcss/forms": "^0.5.7",
     "axios": "^1.6.2",
@@ -25,6 +26,7 @@
     "react-dom": "^18.2.0",
     "react-redux": "^9.0.4",
     "react-router-dom": "^6.21.0",
+    "reactflow": "^11.10.1",
     "tailwind-merge": "^2.1.0"
   },
   "devDependencies": {
