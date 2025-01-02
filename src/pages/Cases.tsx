@@ -16,6 +16,9 @@ const Cases = () => {
     const [exportDialogOpen, setExportDialogOpen] = useState(false);
     const [selectedCases, setSelectedCases] = useState<string[]>([]);
     const [exporting, setExporting] = useState(false);
+    const [taskDialogOpen, setTaskDialogOpen] = useState(false);
+    const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
+    const [selectedModules, setSelectedModules] = useState<Record<string, string[]>>({});
     const [filters, setFilters] = useState({
         project: '',
         module: '',
@@ -23,7 +26,6 @@ const Cases = () => {
         page: 1,
         page_size: 10
     });
-    const [taskDialogOpen, setTaskDialogOpen] = useState(false);
 
     // 获取任务列表
     const fetchTasks = async () => {
@@ -80,8 +82,8 @@ const Cases = () => {
     };
 
     // 处理任务切换
-    const handleTaskChange = (taskId: string) => {
-        console.log('Switching to task:', taskId);
+    const handleTaskChange = (taskId: string, selectedModules: string[] = []) => {
+        console.log('Switching to task:', taskId, 'Selected modules:', selectedModules);
         setCurrentTask(taskId);
         
         // 更新过滤条件
@@ -89,7 +91,9 @@ const Cases = () => {
             const newFilters = {
                 ...prev,
                 task_id: taskId,
-                page: 1
+                page: 1,
+                // 如果选择了特定模块，则添加到过滤条件中
+                module: selectedModules.length === 1 ? selectedModules[0] : ''
             };
             console.log('New filters:', newFilters);
             return newFilters;
@@ -297,6 +301,177 @@ const Cases = () => {
                     </div>
                 )}
             </div>
+        );
+    };
+
+    // 渲染任务选择对话框
+    const renderTaskDialog = () => {
+        const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
+        const [selectedModules, setSelectedModules] = useState<Record<string, string[]>>({});
+
+        const handleModuleSelect = (taskId: string, moduleName: string, checked: boolean) => {
+            setSelectedModules(prev => {
+                const currentModules = prev[taskId] || [];
+                if (checked) {
+                    return {
+                        ...prev,
+                        [taskId]: [...currentModules, moduleName]
+                    };
+                } else {
+                    return {
+                        ...prev,
+                        [taskId]: currentModules.filter(m => m !== moduleName)
+                    };
+                }
+            });
+        };
+
+        const handleSelectAllModules = (taskId: string, moduleNames: string[], checked: boolean) => {
+            setSelectedModules(prev => ({
+                ...prev,
+                [taskId]: checked ? moduleNames : []
+            }));
+        };
+
+        return (
+            <Dialog.Root open={taskDialogOpen} onOpenChange={setTaskDialogOpen}>
+                <Dialog.Portal>
+                    <Dialog.Overlay className="fixed inset-0 bg-black/50" />
+                    <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-lg bg-slate-800 p-6 shadow-lg w-[600px]">
+                        <Dialog.Title className="text-lg font-medium text-slate-200 mb-4 flex justify-between items-center">
+                            <span>选择任务</span>
+                            <span className="text-sm text-slate-400">
+                                共 {tasks.length} 个任务
+                            </span>
+                        </Dialog.Title>
+                        <div className="space-y-4">
+                            {tasks.length === 0 ? (
+                                <div className="text-center py-8 text-slate-400">
+                                    暂无任务数据
+                                </div>
+                            ) : (
+                                <div className="max-h-[400px] overflow-y-auto">
+                                    {tasks.map((task) => (
+                                        <div key={task.task_id} className="mb-4">
+                                            <div
+                                                className={`flex items-center justify-between p-3 rounded-md cursor-pointer hover:bg-slate-700 ${
+                                                    currentTask === task.task_id ? 'bg-slate-700' : ''
+                                                }`}
+                                                onClick={() => {
+                                                    if (task.result?.module_names?.length) {
+                                                        setExpandedTaskId(
+                                                            expandedTaskId === task.task_id ? null : task.task_id
+                                                        );
+                                                    } else {
+                                                        handleTaskChange(task.task_id);
+                                                        setTaskDialogOpen(false);
+                                                    }
+                                                }}
+                                            >
+                                                <div>
+                                                    <div className="text-sm font-medium text-slate-200">
+                                                        {task.type === 'generate_cases' 
+                                                            ? `生成任务 - ${task.result?.cases_count || 0} 个用例`
+                                                            : task.type}
+                                                    </div>
+                                                    <div className="text-xs text-slate-400">
+                                                        创建时间：{new Date(task.created_at).toLocaleString()}
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center space-x-2">
+                                                    <div className={`px-2 py-1 text-xs rounded-full ${
+                                                        task.status === 'completed' ? 'bg-green-500/10 text-green-400' :
+                                                        task.status === 'failed' ? 'bg-red-500/10 text-red-400' :
+                                                        'bg-yellow-500/10 text-yellow-400'
+                                                    }`}>
+                                                        {task.status === 'completed' ? '已完成' :
+                                                         task.status === 'failed' ? '失败' : '进行中'}
+                                                    </div>
+                                                    {task.result?.module_names?.length > 0 && (
+                                                        <ChevronDown
+                                                            className={`h-4 w-4 text-slate-400 transform transition-transform ${
+                                                                expandedTaskId === task.task_id ? 'rotate-180' : ''
+                                                            }`}
+                                                        />
+                                                    )}
+                                                </div>
+                                            </div>
+                                            {/* 模块选择区域 */}
+                                            {expandedTaskId === task.task_id && task.result?.module_names && (
+                                                <div className="mt-2 ml-4 p-3 bg-slate-700/50 rounded-md">
+                                                    <div className="flex items-center justify-between mb-2 pb-2 border-b border-slate-600">
+                                                        <span className="text-sm text-slate-300">选择模块</span>
+                                                        <label className="flex items-center space-x-2">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={selectedModules[task.task_id]?.length === task.result.module_names.length}
+                                                                onChange={(e) => handleSelectAllModules(
+                                                                    task.task_id,
+                                                                    task.result.module_names,
+                                                                    e.target.checked
+                                                                )}
+                                                                className="rounded border-slate-600 bg-slate-800"
+                                                            />
+                                                            <span className="text-sm text-slate-300">全选</span>
+                                                        </label>
+                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-2">
+                                                        {task.result.module_names.map((moduleName) => (
+                                                            <label
+                                                                key={moduleName}
+                                                                className="flex items-center space-x-2 p-2 hover:bg-slate-600/50 rounded"
+                                                            >
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={selectedModules[task.task_id]?.includes(moduleName)}
+                                                                    onChange={(e) => handleModuleSelect(
+                                                                        task.task_id,
+                                                                        moduleName,
+                                                                        e.target.checked
+                                                                    )}
+                                                                    className="rounded border-slate-600 bg-slate-800"
+                                                                />
+                                                                <span className="text-sm text-slate-300">{moduleName}</span>
+                                                            </label>
+                                                        ))}
+                                                    </div>
+                                                    <div className="mt-3 flex justify-end">
+                                                        <button
+                                                            onClick={() => {
+                                                                handleTaskChange(
+                                                                    task.task_id,
+                                                                    selectedModules[task.task_id] || []
+                                                                );
+                                                                setTaskDialogOpen(false);
+                                                            }}
+                                                            className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
+                                                        >
+                                                            确认选择
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                            <div className="flex justify-end space-x-3 mt-6">
+                                <Dialog.Close asChild>
+                                    <button className="px-4 py-2 text-sm text-slate-400 hover:text-slate-300">
+                                        取消
+                                    </button>
+                                </Dialog.Close>
+                                <button
+                                    onClick={fetchTasks}
+                                    className="btn-gradient rounded-md px-4 py-2 text-sm text-white hover:opacity-90"
+                                >
+                                    刷新列表
+                                </button>
+                            </div>
+                        </div>
+                    </Dialog.Content>
+                </Dialog.Portal>
+            </Dialog.Root>
         );
     };
 
@@ -606,78 +781,7 @@ const Cases = () => {
             </Dialog.Root>
 
             {/* 任务选择对话框 */}
-            <Dialog.Root open={taskDialogOpen} onOpenChange={setTaskDialogOpen}>
-                <Dialog.Portal>
-                    <Dialog.Overlay className="fixed inset-0 bg-black/50" />
-                    <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-lg bg-slate-800 p-6 shadow-lg w-[480px]">
-                        <Dialog.Title className="text-lg font-medium text-slate-200 mb-4 flex justify-between items-center">
-                            <span>选择任务</span>
-                            <span className="text-sm text-slate-400">
-                                共 {tasks.length} 个任务
-                            </span>
-                        </Dialog.Title>
-                        <div className="space-y-4">
-                            {tasks.length === 0 ? (
-                                <div className="text-center py-8 text-slate-400">
-                                    暂无任务数据
-                                </div>
-                            ) : (
-                                <div className="max-h-[400px] overflow-y-auto">
-                                    {tasks.map((task) => (
-                                        <div
-                                            key={task.task_id}
-                                            className={`flex items-center justify-between p-3 rounded-md cursor-pointer hover:bg-slate-700 ${
-                                                currentTask === task.task_id ? 'bg-slate-700' : ''
-                                            }`}
-                                            onClick={() => {
-                                                handleTaskChange(task.task_id);
-                                                setTaskDialogOpen(false);
-                                            }}
-                                        >
-                                            <div>
-                                                <div className="text-sm font-medium text-slate-200">
-                                                    {task.type === 'generate_cases' && task.result?.project_name
-                                                        ? `${task.result.project_name}${task.result.module_name ? ` - ${task.result.module_name}` : ''}`
-                                                        : task.type}
-                                                </div>
-                                                <div className="text-xs text-slate-400 mt-1">
-                                                    {task.type === 'generate_cases' && task.result?.cases_count 
-                                                        ? `生成 ${task.result.cases_count} 个用例` 
-                                                        : ''}
-                                                </div>
-                                                <div className="text-xs text-slate-400">
-                                                    创建时间：{new Date(task.created_at).toLocaleString()}
-                                                </div>
-                                            </div>
-                                            <div className={`px-2 py-1 text-xs rounded-full ${
-                                                task.status === 'completed' ? 'bg-green-500/10 text-green-400' :
-                                                task.status === 'failed' ? 'bg-red-500/10 text-red-400' :
-                                                'bg-yellow-500/10 text-yellow-400'
-                                            }`}>
-                                                {task.status === 'completed' ? '已完成' :
-                                                 task.status === 'failed' ? '失败' : '进行中'}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                            <div className="flex justify-end space-x-3 mt-6">
-                                <Dialog.Close asChild>
-                                    <button className="px-4 py-2 text-sm text-slate-400 hover:text-slate-300">
-                                        取消
-                                    </button>
-                                </Dialog.Close>
-                                <button
-                                    onClick={fetchTasks}
-                                    className="btn-gradient rounded-md px-4 py-2 text-sm text-white hover:opacity-90"
-                                >
-                                    刷新列表
-                                </button>
-                            </div>
-                        </div>
-                    </Dialog.Content>
-                </Dialog.Portal>
-            </Dialog.Root>
+            {renderTaskDialog()}
         </div>
     );
 };

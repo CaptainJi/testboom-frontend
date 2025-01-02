@@ -89,4 +89,21 @@ export interface DashboardStats {
 export interface PlantUMLContent {
     content: string;
     task_id: string;
+}
+
+export interface TaskInfo {
+    task_id: string;
+    type: string;
+    status: string;
+    progress: number;
+    result?: {
+        project_name?: string;
+        module_name?: string;
+        progress?: string;
+        cases_count?: number;
+        module_names?: string[];
+    };
+    error: string | null;
+    created_at: string;
+    updated_at: string;
 } 
