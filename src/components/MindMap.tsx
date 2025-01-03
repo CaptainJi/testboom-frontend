@@ -5,9 +5,10 @@ import EditableMindMap from './EditableMindMap';
 
 interface MindMapProps {
     taskId: string;
+    selectedModules?: string[];
 }
 
-const MindMap: React.FC<MindMapProps> = ({ taskId }) => {
+const MindMap: React.FC<MindMapProps> = ({ taskId, selectedModules = [] }) => {
     const [mindmapCode, setMindmapCode] = useState<string>('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -24,8 +25,11 @@ const MindMap: React.FC<MindMapProps> = ({ taskId }) => {
             setLoading(true);
             setError(null);
             try {
-                console.log('开始获取思维导图状态, taskId:', taskId, '重试次数:', retryCount);
-                const response = await caseApi.getPlantUMLStatus(taskId, { page_size: 1000 });
+                console.log('开始获取思维导图状态, taskId:', taskId, '重试次数:', retryCount, '选中模块:', selectedModules);
+                const response = await caseApi.getPlantUMLStatus(taskId, { 
+                    page_size: 1000,
+                    modules: selectedModules
+                });
                 console.log('思维导图状态响应:', JSON.stringify(response, null, 2));
                 
                 if (response.code === 200) {
@@ -65,7 +69,7 @@ const MindMap: React.FC<MindMapProps> = ({ taskId }) => {
         };
 
         fetchMindmap();
-    }, [taskId]);
+    }, [taskId, selectedModules]);
 
     const handleMindMapChange = async (data: any) => {
         // TODO: 实现保存功能

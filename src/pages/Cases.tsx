@@ -306,9 +306,6 @@ const Cases = () => {
 
     // 渲染任务选择对话框
     const renderTaskDialog = () => {
-        const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
-        const [selectedModules, setSelectedModules] = useState<Record<string, string[]>>({});
-
         const handleModuleSelect = (taskId: string, moduleName: string, checked: boolean) => {
             setSelectedModules(prev => {
                 const currentModules = prev[taskId] || [];
@@ -553,7 +550,10 @@ const Cases = () => {
                     <div className="flex items-center justify-between mb-4">
                         <h3 className="text-lg font-medium text-slate-200">测试用例思维导图</h3>
                     </div>
-                    <MindMap taskId={currentTask} />
+                    <MindMap 
+                        taskId={currentTask} 
+                        selectedModules={selectedModules[currentTask] || []}
+                    />
                 </div>
             )}
 

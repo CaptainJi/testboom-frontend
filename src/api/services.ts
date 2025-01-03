@@ -116,9 +116,18 @@ export const caseApi = {
         return response.data;
     },
     // 获取思维导图状态
-    getPlantUMLStatus: async (taskId: string, params?: { page_size?: number }) => {
-        const queryParams = params ? `?${new URLSearchParams(params as any).toString()}` : '';
-        const response = await fetch(`/api/v1/cases/plantuml/status/${taskId}${queryParams}`);
+    getPlantUMLStatus: async (taskId: string, params?: { page_size?: number; modules?: string[] }) => {
+        const queryParams = new URLSearchParams();
+        if (params?.page_size) {
+            queryParams.append('page_size', params.page_size.toString());
+        }
+        if (params?.modules && params.modules.length > 0) {
+            queryParams.append('modules', params.modules.join(','));
+        }
+        const queryString = queryParams.toString();
+        const url = `/api/v1/cases/plantuml/status/${taskId}${queryString ? `?${queryString}` : ''}`;
+        console.log('请求思维导图URL:', url); // 添加日志
+        const response = await fetch(url);
         return response.json();
     },
     // 获取思维导图内容
