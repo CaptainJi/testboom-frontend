@@ -144,6 +144,18 @@ export const caseApi = {
         );
         return response.data;
     },
+    // 删除单个用例
+    deleteCase: async (caseId: string): Promise<ApiResponse<boolean>> => {
+        const response = await apiClient.delete<ApiResponse<boolean>>(`/api/v1/cases/${caseId}`);
+        return response.data;
+    },
+    // 批量删除用例
+    batchDeleteCases: async (data: { case_ids: string[] }): Promise<ApiResponse<Record<string, boolean>>> => {
+        const response = await apiClient.delete<ApiResponse<Record<string, boolean>>>('/api/v1/cases', {
+            data
+        });
+        return response.data;
+    },
 };
 
 // 任务相关接口

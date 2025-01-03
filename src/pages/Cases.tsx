@@ -472,6 +472,49 @@ const Cases = () => {
         );
     };
 
+    // 处理单个用例删除
+    const handleDeleteCase = async (caseId: string) => {
+        try {
+            const response = await caseApi.deleteCase(caseId);
+            if (response.code === 200 && response.data) {
+                // 刷新用例列表
+                fetchCases();
+                // 清除选中状态
+                setSelectedCases(prev => prev.filter(id => id !== caseId));
+            }
+        } catch (error) {
+            console.error('删除用例失败:', error);
+            alert('删除用例失败，请重试');
+        }
+    };
+
+    // 处理批量删除用例
+    const handleBatchDelete = async () => {
+        if (selectedCases.length === 0) {
+            alert('请先选择要删除的用例');
+            return;
+        }
+
+        if (!confirm(`确定要删除选中的 ${selectedCases.length} 个用例吗？`)) {
+            return;
+        }
+
+        try {
+            const response = await caseApi.batchDeleteCases({
+                case_ids: selectedCases
+            });
+            if (response.code === 200 && response.data) {
+                // 刷新用例列表
+                fetchCases();
+                // 清除选中状态
+                setSelectedCases([]);
+            }
+        } catch (error) {
+            console.error('批量删除用例失败:', error);
+            alert('批量删除用例失败，请重试');
+        }
+    };
+
     useEffect(() => {
         // 初始化时获取任务列表
         fetchTasks();
@@ -579,16 +622,26 @@ const Cases = () => {
                     ) : (
                         <>
                             {/* 全选区域 */}
-                            <div className="flex items-center space-x-4 px-4 mb-4 pb-4 border-b border-slate-700">
-                                <div className="flex items-center h-5">
-                                    <input
-                                        type="checkbox"
-                                        checked={selectedCases.length === total && total > 0}
-                                        onChange={handleSelectAll}
-                                        className="w-4 h-4 rounded border-slate-700 bg-slate-800 focus:ring-primary"
-                                    />
+                            <div className="flex items-center justify-between px-4 mb-4 pb-4 border-b border-slate-700">
+                                <div className="flex items-center space-x-4">
+                                    <div className="flex items-center h-5">
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedCases.length === total && total > 0}
+                                            onChange={handleSelectAll}
+                                            className="w-4 h-4 rounded border-slate-700 bg-slate-800 focus:ring-primary"
+                                        />
+                                    </div>
+                                    <span className="text-sm text-slate-400">全选</span>
                                 </div>
-                                <span className="text-sm text-slate-400">全选</span>
+                                {selectedCases.length > 0 && (
+                                    <button 
+                                        className="inline-flex items-center space-x-2 rounded-md bg-red-500 px-3 py-1 text-sm font-medium text-white hover:bg-red-600"
+                                        onClick={handleBatchDelete}
+                                    >
+                                        <span>删除选中({selectedCases.length})</span>
+                                    </button>
+                                )}
                             </div>
                             {/* 用例列表 */}
                             <div className="divide-y divide-slate-700">
@@ -649,6 +702,17 @@ const Cases = () => {
                                                 }`}>
                                                     {getStatusText(testCase.status)}
                                                 </span>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        if (confirm('确定要删除该用例吗？')) {
+                                                            handleDeleteCase(testCase.case_id);
+                                                        }
+                                                    }}
+                                                    className="text-sm text-red-400 hover:text-red-300"
+                                                >
+                                                    删除
+                                                </button>
                                                 {/* 展开/关闭箭头 */}
                                                 {expandedCaseId === testCase.case_id ? (
                                                     <ChevronDown className="h-4 w-4 text-slate-400" />
