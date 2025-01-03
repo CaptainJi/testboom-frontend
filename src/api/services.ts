@@ -163,6 +163,13 @@ export const taskApi = {
         const response = await apiClient.get<ApiResponse<Task>>(`/api/v1/cases/tasks/${taskId}`);
         return response.data;
     },
+    // 删除任务
+    deleteTask: async (taskId: string, deleteCases: boolean = false) => {
+        const response = await fetch(`/api/v1/cases/tasks/${taskId}${deleteCases ? '?delete_cases=true' : ''}`, {
+            method: 'DELETE',
+        });
+        return handleResponse(response);
+    },
 };
 
 // 仪表盘相关接口

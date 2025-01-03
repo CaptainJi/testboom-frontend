@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
 import { taskApi } from '../api/services';
 import type { Task } from '../types/api';
+import { Trash2 } from 'lucide-react';
+import { Modal } from '../components/ui/modal';
+import { Button } from '../components/ui/button';
+import { toast } from '../components/ui/use-toast';
 
 const Tasks = () => {
     const [tasks, setTasks] = useState<Task[]>([]);
@@ -12,6 +16,15 @@ const Tasks = () => {
         page_size: 10,
     });
     const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+    const [deleteDialog, setDeleteDialog] = useState<{
+        open: boolean;
+        taskId: string | null;
+        deleteCases: boolean;
+    }>({
+        open: false,
+        taskId: null,
+        deleteCases: false,
+    });
 
     // 获取任务列表
     const fetchTasks = async () => {
@@ -68,6 +81,42 @@ const Tasks = () => {
         return statusMap[status] || status;
     };
 
+    // 删除任务
+    const handleDeleteTask = async () => {
+        if (!deleteDialog.taskId) return;
+        
+        try {
+            const response = await taskApi.deleteTask(deleteDialog.taskId, deleteDialog.deleteCases);
+            if (response.code === 200) {
+                toast({
+                    title: "删除成功",
+                    description: "任务已成功删除",
+                });
+                // 重置筛选条件
+                setFilters(prev => ({
+                    ...prev,
+                    type: '',
+                    status: '',
+                }));
+                // 刷新任务列表
+                fetchTasks();
+                // 如果删除的是当前选中的任务，清空选中状态
+                if (selectedTask?.task_id === deleteDialog.taskId) {
+                    setSelectedTask(null);
+                }
+            }
+        } catch (error) {
+            console.error('删除任务失败:', error);
+            toast({
+                title: "删除失败",
+                description: "删除任务时发生错误",
+                variant: "destructive",
+            });
+        } finally {
+            setDeleteDialog({ open: false, taskId: null, deleteCases: false });
+        }
+    };
+
     return (
         <div className="space-y-6">
             {/* 任务列表 */}
@@ -112,13 +161,12 @@ const Tasks = () => {
                                             ? 'border-blue-500 bg-blue-500/5' 
                                             : 'hover:border-blue-500/50'
                                     }`}
-                                    onClick={() => {
-                                        setSelectedTask(task);
-                                        fetchTaskDetail(task.task_id);
-                                    }}
                                 >
                                     <div className="flex items-center justify-between">
-                                        <div>
+                                        <div className="flex-1" onClick={() => {
+                                            setSelectedTask(task);
+                                            fetchTaskDetail(task.task_id);
+                                        }}>
                                             <p className="font-medium text-slate-200">
                                                 {task.result?.project_name || '未知项目'}
                                             </p>
@@ -142,6 +190,19 @@ const Tasks = () => {
                                                     </p>
                                                 )}
                                             </div>
+                                            <button
+                                                className="p-2 hover:bg-slate-800 rounded-full transition-colors"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setDeleteDialog({
+                                                        open: true,
+                                                        taskId: task.task_id,
+                                                        deleteCases: false,
+                                                    });
+                                                }}
+                                            >
+                                                <Trash2 className="w-4 h-4 text-slate-400 hover:text-red-400" />
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -213,6 +274,45 @@ const Tasks = () => {
                     )}
                 </div>
             </div>
+
+            {/* 删除确认对话框 */}
+            <Modal
+                isOpen={deleteDialog.open}
+                onClose={() => setDeleteDialog(prev => ({ ...prev, open: false }))}
+                title="删除任务"
+                footer={
+                    <>
+                        <button
+                            className="px-4 py-2 text-sm text-slate-400 hover:text-slate-300"
+                            onClick={() => setDeleteDialog({ open: false, taskId: null, deleteCases: false })}
+                        >
+                            取消
+                        </button>
+                        <button
+                            className="btn-gradient rounded-md px-4 py-2 text-sm text-white hover:opacity-90"
+                            onClick={handleDeleteTask}
+                        >
+                            删除
+                        </button>
+                    </>
+                }
+            >
+                <div className="py-4">
+                    <p className="text-sm text-slate-200 mb-4">确定要删除这个任务吗？此操作不可恢复。</p>
+                    <label className="flex items-center space-x-2">
+                        <input
+                            type="checkbox"
+                            checked={deleteDialog.deleteCases}
+                            onChange={(e) => setDeleteDialog(prev => ({
+                                ...prev,
+                                deleteCases: e.target.checked
+                            }))}
+                            className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                        />
+                        <span className="text-sm text-slate-200">同时删除关联的测试用例</span>
+                    </label>
+                </div>
+            </Modal>
         </div>
     );
 };
