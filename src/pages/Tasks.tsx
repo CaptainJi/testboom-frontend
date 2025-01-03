@@ -57,6 +57,17 @@ const Tasks = () => {
         fetchTasks();
     }, [filters]);
 
+    // 获取任务状态的中文描述
+    const getStatusText = (status: string) => {
+        const statusMap: Record<string, string> = {
+            'pending': '等待中',
+            'processing': '进行中',
+            'completed': '已完成',
+            'failed': '失败'
+        };
+        return statusMap[status] || status;
+    };
+
     return (
         <div className="space-y-6">
             {/* 任务列表 */}
@@ -108,15 +119,28 @@ const Tasks = () => {
                                 >
                                     <div className="flex items-center justify-between">
                                         <div>
-                                            <p className="font-medium text-slate-200">{task.type}</p>
+                                            <p className="font-medium text-slate-200">
+                                                {task.result?.project_name || '未知项目'}
+                                            </p>
                                             <p className="text-sm text-slate-400">
                                                 {new Date(task.created_at).toLocaleString()}
                                             </p>
                                         </div>
                                         <div className="flex items-center space-x-4">
                                             <div className="text-right">
-                                                <p className="text-sm text-slate-400">{task.status}</p>
-                                                <p className="text-sm text-slate-400">{task.progress}%</p>
+                                                <div className={`px-2 py-1 text-xs rounded-full ${
+                                                    task.status === 'completed' ? 'bg-green-500/10 text-green-400' :
+                                                    task.status === 'failed' ? 'bg-red-500/10 text-red-400' :
+                                                    task.status === 'processing' ? 'bg-yellow-500/10 text-yellow-400' :
+                                                    'bg-blue-500/10 text-blue-400'
+                                                }`}>
+                                                    {getStatusText(task.status)}
+                                                </div>
+                                                {task.status === 'processing' && (
+                                                    <p className="mt-1 text-xs text-slate-400">
+                                                        {task.progress}%
+                                                    </p>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
