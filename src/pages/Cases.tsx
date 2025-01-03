@@ -367,9 +367,7 @@ const Cases = () => {
                                             >
                                                 <div>
                                                     <div className="text-sm font-medium text-slate-200">
-                                                        {task.type === 'generate_cases' 
-                                                            ? `生成任务 - ${task.result?.cases_count || 0} 个用例`
-                                                            : task.type}
+                                                        {task.result?.project_name || '未命名项目'} - {task.result?.cases_count || 0} 个用例
                                                     </div>
                                                     <div className="text-xs text-slate-400">
                                                         创建时间：{new Date(task.created_at).toLocaleString()}
