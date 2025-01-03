@@ -334,7 +334,7 @@ const Cases = () => {
             <Dialog.Root open={taskDialogOpen} onOpenChange={setTaskDialogOpen}>
                 <Dialog.Portal>
                     <Dialog.Overlay className="fixed inset-0 bg-black/50" />
-                    <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-lg bg-slate-800 p-6 shadow-lg w-[600px]">
+                    <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-lg bg-slate-900 p-6 shadow-lg w-[600px] border border-slate-800">
                         <Dialog.Title className="text-lg font-medium text-slate-200 mb-4 flex justify-between items-center">
                             <span>选择任务</span>
                             <span className="text-sm text-slate-400">
@@ -351,8 +351,8 @@ const Cases = () => {
                                     {tasks.map((task) => (
                                         <div key={task.task_id} className="mb-4">
                                             <div
-                                                className={`flex items-center justify-between p-3 rounded-md cursor-pointer hover:bg-slate-700 ${
-                                                    currentTask === task.task_id ? 'bg-slate-700' : ''
+                                                className={`flex items-center justify-between p-3 rounded-md cursor-pointer hover:bg-slate-800/50 ${
+                                                    currentTask === task.task_id ? 'bg-slate-800/50' : ''
                                                 }`}
                                                 onClick={() => {
                                                     if (task.result?.module_names?.length) {
@@ -393,10 +393,9 @@ const Cases = () => {
                                             </div>
                                             {/* 模块选择区域 */}
                                             {expandedTaskId === task.task_id && task.result?.module_names && (
-                                                <div className="mt-2 ml-4 p-3 bg-slate-700/50 rounded-md">
-                                                    <div className="flex items-center justify-between mb-2 pb-2 border-b border-slate-600">
-                                                        <span className="text-sm text-slate-300">选择模块</span>
-                                                        <label className="flex items-center space-x-2">
+                                                <div className="mt-2 ml-4 p-3 bg-slate-800/50 rounded-md border border-slate-700">
+                                                    <div className="flex items-center justify-between mb-2">
+                                                        <div className="flex items-center space-x-2">
                                                             <input
                                                                 type="checkbox"
                                                                 checked={selectedModules[task.task_id]?.length === task.result.module_names.length}
@@ -405,16 +404,28 @@ const Cases = () => {
                                                                     task.result.module_names,
                                                                     e.target.checked
                                                                 )}
-                                                                className="rounded border-slate-600 bg-slate-800"
+                                                                className="rounded border-slate-600 bg-slate-950"
                                                             />
                                                             <span className="text-sm text-slate-300">全选</span>
-                                                        </label>
+                                                        </div>
+                                                        <button
+                                                            onClick={() => {
+                                                                handleTaskChange(
+                                                                    task.task_id,
+                                                                    selectedModules[task.task_id] || []
+                                                                );
+                                                                setTaskDialogOpen(false);
+                                                            }}
+                                                            className="text-sm text-blue-400 hover:text-blue-300"
+                                                        >
+                                                            确认选择
+                                                        </button>
                                                     </div>
                                                     <div className="grid grid-cols-2 gap-2">
                                                         {task.result.module_names.map((moduleName) => (
                                                             <label
                                                                 key={moduleName}
-                                                                className="flex items-center space-x-2 p-2 hover:bg-slate-600/50 rounded"
+                                                                className="flex items-center space-x-2 p-2 hover:bg-slate-700/50 rounded"
                                                             >
                                                                 <input
                                                                     type="checkbox"
@@ -424,25 +435,11 @@ const Cases = () => {
                                                                         moduleName,
                                                                         e.target.checked
                                                                     )}
-                                                                    className="rounded border-slate-600 bg-slate-800"
+                                                                    className="rounded border-slate-600 bg-slate-950"
                                                                 />
                                                                 <span className="text-sm text-slate-300">{moduleName}</span>
                                                             </label>
                                                         ))}
-                                                    </div>
-                                                    <div className="mt-3 flex justify-end">
-                                                        <button
-                                                            onClick={() => {
-                                                                handleTaskChange(
-                                                                    task.task_id,
-                                                                    selectedModules[task.task_id] || []
-                                                                );
-                                                                setTaskDialogOpen(false);
-                                                            }}
-                                                            className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
-                                                        >
-                                                            确认选择
-                                                        </button>
                                                     </div>
                                                 </div>
                                             )}
@@ -458,7 +455,7 @@ const Cases = () => {
                                 </Dialog.Close>
                                 <button
                                     onClick={fetchTasks}
-                                    className="btn-gradient rounded-md px-4 py-2 text-sm text-white hover:opacity-90"
+                                    className="text-sm text-blue-400 hover:text-blue-300"
                                 >
                                     刷新列表
                                 </button>
@@ -566,7 +563,7 @@ const Cases = () => {
                     </div>
                     <div className="flex items-center space-x-4">
                         <button
-                            className="inline-flex items-center space-x-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                            className="btn-gradient rounded-md px-4 py-2 text-sm font-medium text-white hover:opacity-90"
                             onClick={() => {
                                 fetchTasks();
                                 setTaskDialogOpen(true);
@@ -575,7 +572,7 @@ const Cases = () => {
                             <span>选择任务</span>
                         </button>
                         <button 
-                            className="inline-flex items-center space-x-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                            className="btn-gradient rounded-md px-4 py-2 text-sm font-medium text-white hover:opacity-90 inline-flex items-center space-x-2"
                             onClick={() => setExportDialogOpen(true)}
                         >
                             <Download className="h-4 w-4" />
