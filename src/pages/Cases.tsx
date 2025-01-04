@@ -534,9 +534,10 @@ const Cases = () => {
                     ...editingCase.content,
                     precondition: typeof updatedData.content?.preconditions === 'string' 
                         ? updatedData.content.preconditions
-                        : updatedData.content?.preconditions || '',
+                        : updatedData.content?.precondition || '',
                     steps: updatedData.content?.steps || [],
                     expected: updatedData.content?.expected || [],
+                    remark: updatedData.content?.remark || ''
                 }
             });
             if (response.code === 200 && response.data) {
@@ -578,6 +579,7 @@ const Cases = () => {
                                         preconditions: formData.get('preconditions') as string,
                                         steps: (formData.get('steps') as string).split('\n').filter(Boolean),
                                         expected: (formData.get('expected') as string).split('\n').filter(Boolean),
+                                        remark: formData.get('remark') as string
                                     }
                                 });
                             }}>
@@ -684,6 +686,17 @@ const Cases = () => {
                                             defaultValue={editingCase.content?.expected?.join('\n')}
                                             className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-200 min-h-[120px]"
                                             required
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-300 mb-1">
+                                            备注
+                                        </label>
+                                        <textarea
+                                            name="remark"
+                                            defaultValue={editingCase.content?.remark || ''}
+                                            className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-200 min-h-[80px]"
+                                            placeholder="请输入修改说明（可选）"
                                         />
                                     </div>
                                 </div>
