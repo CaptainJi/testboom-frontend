@@ -530,8 +530,10 @@ const Cases = () => {
                 ...updatedData,
                 project: editingCase.project, // 保持项目名不变
                 module: editingCase.module,   // 保持模块名不变
+                level: updatedData.level || editingCase.level, // 确保level字段被正确传递
                 content: {
                     ...editingCase.content,
+                    level: updatedData.level || editingCase.level, // 同步更新content中的level
                     precondition: typeof updatedData.content?.preconditions === 'string' 
                         ? updatedData.content.preconditions
                         : updatedData.content?.precondition || '',
@@ -541,7 +543,6 @@ const Cases = () => {
                 }
             });
             if (response.code === 200 && response.data) {
-                // 刷新用例列表
                 fetchCases();
                 setEditDialogOpen(false);
                 setEditingCase(null);
