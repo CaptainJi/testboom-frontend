@@ -1,0 +1,191 @@
+# TestBoom Frontend Development Rules
+
+## 技术栈
+- React 18.2.0
+- TypeScript 5.2.2
+- Vite 5.0.8
+- TailwindCSS 3.3.6
+- Radix UI (Dialog, DropdownMenu等组件)
+- Axios (HTTP请求)
+- React Router DOM 6.21.0
+- Framer Motion (动画)
+- Lucide React (图标)
+- ReactFlow (思维导图)
+- Class Variance Authority (样式变体)
+- Clsx (条件类名)
+
+## UI主题和样式规范
+
+### 颜色系统
+- 主背景色: slate-900
+- 次背景色: slate-800
+- 边框颜色: slate-700
+- 主文本色: slate-200
+- 次文本色: slate-400
+- 禁用文本色: slate-500
+- 强调色: blue-400
+- 成功色: green-400
+- 警告色: yellow-400
+- 错误色: red-400
+- 渐变按钮: btn-gradient
+
+### 组件样式
+- 圆角: rounded-md (中等圆角), rounded-lg (大圆角)
+- 阴影: shadow-lg
+- 悬浮效果: hover:opacity-90
+- 禁用状态: opacity-50 cursor-not-allowed
+- 边框: border border-slate-700
+- 过渡动画: transition-all duration-200
+- 卡片样式: hover-card glow
+
+### 间距规范
+- 组件内边距: p-4, p-6
+- 组件间距: space-y-4, space-y-6
+- 网格间距: gap-4
+- 弹性布局间距: space-x-2, space-x-4
+
+### 字体规范
+- 标题: text-lg font-medium
+- 正文: text-sm
+- 小字: text-xs
+- 字重: font-medium (500), font-semibold (600)
+
+## 开发规范
+
+### 代码组织
+1. 组件文件结构
+   - src/
+     - components/ (可复用组件)
+       - ui/ (基础UI组件)
+       - MindMap.tsx (思维导图组件)
+     - pages/ (页面组件)
+     - api/ (API服务)
+     - types/ (类型定义)
+     - utils/ (工具函数)
+
+2. 命名规范
+   - 组件: PascalCase (如 EditCaseDialog)
+   - 函数: camelCase (如 handleEditCase)
+   - 常量: UPPER_CASE
+   - 类型/接口: PascalCase (如 TestCase)
+   - 文件名: 组件与文件名一致
+
+### TypeScript规范
+- 使用类型而不是接口（除非需要扩展）
+- 明确的类型定义，避免any
+- 使用可选链和空值合并运算符
+- 函数参数和返回值都要有类型注解
+- API响应类型定义要完整
+
+### 组件规范
+- 使用函数组件和Hooks
+- 状态管理使用useState和useEffect
+- Props类型必须明确定义
+- 组件应该是纯函数，副作用在useEffect中处理
+- 复杂组件要拆分成小组件
+
+### API调用规范
+- 使用统一的API客户端（apiClient）
+- 所有API调用都要有错误处理
+- 使用TypeScript类型确保请求和响应的类型安全
+- API函数统一在api/services.ts中定义
+- API响应要处理loading状态
+
+## 已实现功能
+
+### 用例管理
+1. 用例列表展示
+   - 分页加载
+   - 列表项展开/收起
+   - 用例状态标识（draft/ready/testing/passed/failed/blocked）
+   - 用例等级标识（P0/P1/P2/P3）
+   - 批量选择/删除
+   - 项目/模块分类显示
+
+2. 用例编辑
+   - 基本信息编辑（名称、等级、状态）
+   - 前置条件编辑
+   - 测试步骤编辑（多行）
+   - 预期结果编辑（多行）
+   - 备注信息
+   - 项目和模块名只读显示
+
+3. 用例删除
+   - 单个用例删除
+   - 批量用例删除
+   - 删除确认提示
+   - 删除后自动刷新列表
+
+4. 任务管理
+   - 任务列表查看
+   - 任务状态显示（completed/failed/processing）
+   - 模块选择功能
+   - 任务刷新功能
+   - 任务进度显示
+
+5. 思维导图
+   - 用例思维导图展示
+   - 模块筛选功能
+   - 节点展开/收起
+   - 缩放和拖拽
+
+### UI组件
+1. Dialog组件
+   - 编辑对话框
+   - 任务选择对话框
+   - 导出对话框
+   - 遮罩层效果
+   - 动画过渡
+
+2. 表单组件
+   - 输入框（单行/多行）
+   - 下拉选择框
+   - 多行文本框
+   - 复选框
+   - 表单验证
+
+3. 状态指示
+   - 加载状态
+   - 错误提示
+   - 成功提示
+   - 空状态展示
+   - 进度指示
+
+## 待实现功能
+1. 用例筛选
+   - 按项目筛选
+   - 按模块筛选
+   - 按状态筛选
+   - 按等级筛选
+
+2. 高级搜索
+   - 关键词搜索
+   - 组合条件搜索
+   - 搜索历史记录
+
+3. 用例导入
+   - Excel导入
+   - 模板下载
+   - 导入预览
+   - 错误提示
+
+4. 批量编辑
+   - 批量修改状态
+   - 批量修改等级
+   - 批量移动模块
+
+5. 用例历史记录
+   - 修改历史
+   - 修改对比
+   - 版本回滚
+
+6. 用例评审流程
+   - 评审状态管理
+   - 评审意见
+   - 评审通知
+
+7. 数据统计报表
+   - 用例覆盖率
+   - 执行情况统计
+   - 趋势分析
+   - 导出报表 
