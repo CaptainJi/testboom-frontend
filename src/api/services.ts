@@ -149,6 +149,11 @@ export const caseApi = {
         const response = await apiClient.delete<ApiResponse<boolean>>(`/api/v1/cases/${caseId}`);
         return response.data;
     },
+    // 更新用例
+    updateCase: async (caseId: string, data: Partial<TestCase>): Promise<ApiResponse<TestCase>> => {
+        const response = await apiClient.put<ApiResponse<TestCase>>(`/api/v1/cases/${caseId}`, data);
+        return response.data;
+    },
     // 批量删除用例
     batchDeleteCases: async (data: { case_ids: string[] }): Promise<ApiResponse<Record<string, boolean>>> => {
         const response = await apiClient.delete<ApiResponse<Record<string, boolean>>>('/api/v1/cases', {

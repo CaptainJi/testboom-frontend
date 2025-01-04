@@ -26,6 +26,16 @@ const Cases = () => {
         page: 1,
         page_size: 10
     });
+    const [editingCase, setEditingCase] = useState<TestCase | null>(null);
+    const [editDialogOpen, setEditDialogOpen] = useState(false);
+    const [updating, setUpdating] = useState(false);
+
+    useEffect(() => {
+        if (!editDialogOpen) {
+            // 当对话框关闭时，清理编辑状态
+            setEditingCase(null);
+        }
+    }, [editDialogOpen]);
 
     // 获取任务列表
     const fetchTasks = async () => {
@@ -510,6 +520,200 @@ const Cases = () => {
         }
     };
 
+    // 处理用例编辑
+    const handleEditCase = async (updatedData: Partial<TestCase>) => {
+        if (!editingCase) return;
+        
+        try {
+            setUpdating(true);
+            const response = await caseApi.updateCase(editingCase.case_id, {
+                ...updatedData,
+                project: editingCase.project, // 保持项目名不变
+                module: editingCase.module,   // 保持模块名不变
+                content: {
+                    ...editingCase.content,
+                    precondition: typeof updatedData.content?.preconditions === 'string' 
+                        ? updatedData.content.preconditions
+                        : updatedData.content?.preconditions || '',
+                    steps: updatedData.content?.steps || [],
+                    expected: updatedData.content?.expected || [],
+                }
+            });
+            if (response.code === 200 && response.data) {
+                // 刷新用例列表
+                fetchCases();
+                setEditDialogOpen(false);
+                setEditingCase(null);
+            }
+        } catch (error) {
+            console.error('更新用例失败:', error);
+            alert('更新用例失败，请重试');
+        } finally {
+            setUpdating(false);
+        }
+    };
+
+    // 渲染编辑对话框
+    const renderEditDialog = () => (
+        <Dialog.Root 
+            open={editDialogOpen} 
+            onOpenChange={setEditDialogOpen}
+        >
+            <Dialog.Portal>
+                <Dialog.Overlay className="fixed inset-0 bg-black/50" />
+                <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-lg bg-slate-900 p-6 shadow-lg w-[800px] border border-slate-800 max-h-[90vh] overflow-y-auto">
+                    {editingCase && (
+                        <>
+                            <Dialog.Title className="text-lg font-medium text-slate-200 mb-4">
+                                编辑用例
+                            </Dialog.Title>
+                            <form onSubmit={(e) => {
+                                e.preventDefault();
+                                const formData = new FormData(e.currentTarget);
+                                handleEditCase({
+                                    name: formData.get('name') as string,
+                                    level: formData.get('level') as string,
+                                    status: formData.get('status') as string,
+                                    content: {
+                                        preconditions: formData.get('preconditions') as string,
+                                        steps: (formData.get('steps') as string).split('\n').filter(Boolean),
+                                        expected: (formData.get('expected') as string).split('\n').filter(Boolean),
+                                    }
+                                });
+                            }}>
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-slate-300 mb-1">
+                                                项目名称
+                                            </label>
+                                            <input
+                                                name="project"
+                                                value={editingCase.project}
+                                                className="w-full rounded-md border border-slate-700 bg-slate-800/50 px-3 py-2 text-sm text-slate-400"
+                                                disabled
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-slate-300 mb-1">
+                                                模块名称
+                                            </label>
+                                            <input
+                                                name="module"
+                                                value={editingCase.module}
+                                                className="w-full rounded-md border border-slate-700 bg-slate-800/50 px-3 py-2 text-sm text-slate-400"
+                                                disabled
+                                            />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-300 mb-1">
+                                            用例名称
+                                        </label>
+                                        <input
+                                            name="name"
+                                            defaultValue={editingCase.name}
+                                            className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-200"
+                                            required
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-slate-300 mb-1">
+                                                用例等级
+                                            </label>
+                                            <select
+                                                name="level"
+                                                defaultValue={editingCase.level}
+                                                className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-200"
+                                                required
+                                            >
+                                                <option value="P0">P0</option>
+                                                <option value="P1">P1</option>
+                                                <option value="P2">P2</option>
+                                                <option value="P3">P3</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-slate-300 mb-1">
+                                                用例状态
+                                            </label>
+                                            <select
+                                                name="status"
+                                                defaultValue={editingCase.status}
+                                                className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-200"
+                                                required
+                                            >
+                                                <option value="draft">草稿</option>
+                                                <option value="ready">就绪</option>
+                                                <option value="testing">测试中</option>
+                                                <option value="passed">通过</option>
+                                                <option value="failed">失败</option>
+                                                <option value="blocked">阻塞</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-300 mb-1">
+                                            前置条件
+                                        </label>
+                                        <textarea
+                                            name="preconditions"
+                                            defaultValue={editingCase.content?.precondition || ''}
+                                            className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-200 min-h-[80px]"
+                                            required
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-300 mb-1">
+                                            测试步骤（每行一个步骤）
+                                        </label>
+                                        <textarea
+                                            name="steps"
+                                            defaultValue={editingCase.content?.steps?.join('\n')}
+                                            className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-200 min-h-[120px]"
+                                            required
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-300 mb-1">
+                                            预期结果（每行一个结果）
+                                        </label>
+                                        <textarea
+                                            name="expected"
+                                            defaultValue={editingCase.content?.expected?.join('\n')}
+                                            className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-200 min-h-[120px]"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+                                <div className="flex justify-end space-x-3 mt-6">
+                                    <Dialog.Close asChild>
+                                        <button
+                                            type="button"
+                                            className="px-4 py-2 text-sm text-slate-400 hover:text-slate-300"
+                                        >
+                                            取消
+                                        </button>
+                                    </Dialog.Close>
+                                    <button
+                                        type="submit"
+                                        disabled={updating}
+                                        className={`btn-gradient rounded-md px-4 py-2 text-sm text-white ${
+                                            updating ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90'
+                                        }`}
+                                    >
+                                        {updating ? '更新中...' : '确认更新'}
+                                    </button>
+                                </div>
+                            </form>
+                        </>
+                    )}
+                </Dialog.Content>
+            </Dialog.Portal>
+        </Dialog.Root>
+    );
+
     useEffect(() => {
         // 初始化时获取任务列表
         fetchTasks();
@@ -698,6 +902,15 @@ const Cases = () => {
                                                     {getStatusText(testCase.status)}
                                                 </span>
                                                 <button
+                                                    onClick={() => {
+                                                        setEditingCase(testCase);
+                                                        setEditDialogOpen(true);
+                                                    }}
+                                                    className="text-sm text-blue-400 hover:text-blue-300"
+                                                >
+                                                    编辑
+                                                </button>
+                                                <button
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         if (confirm('确定要删除该用例吗？')) {
@@ -841,6 +1054,9 @@ const Cases = () => {
 
             {/* 任务选择对话框 */}
             {renderTaskDialog()}
+
+            {/* 编辑对话框 */}
+            {renderEditDialog()}
         </div>
     );
 };
