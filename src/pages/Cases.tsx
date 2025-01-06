@@ -748,7 +748,27 @@ const Cases = () => {
 
     return (
         <div className="space-y-6">
-            {/* 筛选和操作栏 - 移动到顶部 */}
+            {/* 用例统计 - 移动到顶部 */}
+            <div className="grid gap-6 md:grid-cols-3">
+                <div className="hover-card glow rounded-lg p-4">
+                    <h4 className="text-sm font-medium text-slate-400">总用例数</h4>
+                    <p className="mt-2 text-2xl font-bold text-slate-200">{total}</p>
+                </div>
+                <div className="hover-card glow rounded-lg p-4">
+                    <h4 className="text-sm font-medium text-slate-400">已通过</h4>
+                    <p className="mt-2 text-2xl font-bold text-slate-200">
+                        {cases.filter(c => c.status === 'approved').length}
+                    </p>
+                </div>
+                <div className="hover-card glow rounded-lg p-4">
+                    <h4 className="text-sm font-medium text-slate-400">审核中</h4>
+                    <p className="mt-2 text-2xl font-bold text-slate-200">
+                        {cases.filter(c => c.status === 'reviewing').length}
+                    </p>
+                </div>
+            </div>
+
+            {/* 筛选和操作栏 */}
             <div className="hover-card glow rounded-lg p-4">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
@@ -986,26 +1006,6 @@ const Cases = () => {
                         </div>
                     </div>
                 )}
-            </div>
-
-            {/* 用例统计 */}
-            <div className="grid gap-6 md:grid-cols-3">
-                <div className="hover-card glow rounded-lg p-4">
-                    <h4 className="text-sm font-medium text-slate-400">总用例数</h4>
-                    <p className="mt-2 text-2xl font-bold text-slate-200">{total}</p>
-                </div>
-                <div className="hover-card glow rounded-lg p-4">
-                    <h4 className="text-sm font-medium text-slate-400">已通过</h4>
-                    <p className="mt-2 text-2xl font-bold text-slate-200">
-                        {cases.filter(c => c.status === 'approved').length}
-                    </p>
-                </div>
-                <div className="hover-card glow rounded-lg p-4">
-                    <h4 className="text-sm font-medium text-slate-400">审核中</h4>
-                    <p className="mt-2 text-2xl font-bold text-slate-200">
-                        {cases.filter(c => c.status === 'reviewing').length}
-                    </p>
-                </div>
             </div>
 
             {/* 导出对话框 */}
